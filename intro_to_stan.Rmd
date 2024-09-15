@@ -1,0 +1,24 @@
+---
+title: "MCMC basics"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(rstan)
+library(bayesplot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

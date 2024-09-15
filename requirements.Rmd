@@ -1,0 +1,39 @@
+---
+title: "Requirements"
+output: html_notebook
+---
+
+```{r}
+# installing RStan
+remove.packages("rstan")
+if (file.exists(".RData")) file.remove(".RData")
+
+install.packages("rstan", repos = "https://cloud.r-project.org/", dependencies = TRUE)
+
+options(mc.cores = parallel::detectCores())
+
+rstan_options(auto_write = TRUE)
+```
+
+```{r}
+# load packages required by the textbook
+library(rstan)
+library(bayesrules)
+library(tidyverse)
+library(janitor)
+library(rstanarm)
+library(bayesplot)
+library(tidybayes)
+library(broom.mixed)
+library(modelr)
+library(e1071)
+library(forcats)
+```
+
+
+### References
+1. Primary reference: Ch 6,7,8 of [Bayes Rules! An Introduction to Applied Bayesian Modeling](https://www.bayesrulesbook.com/) by Jhonson et al.
+
+
+
+
