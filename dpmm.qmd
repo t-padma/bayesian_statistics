@@ -1,0 +1,6 @@
+---
+title: "Dirichlet Process Mixture Model implementation"
+format: html
+---
+
+
