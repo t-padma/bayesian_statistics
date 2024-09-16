@@ -8,7 +8,7 @@ output: html_notebook
 remove.packages("rstan")
 if (file.exists(".RData")) file.remove(".RData")
 
-install.packages("rstan", repos = "https://cloud.r-project.org/", dependencies = TRUE)
+install.packages("rstan", repos = "https://cloud.r-project.org/", dependencies = TRUE) # nolint: line_length_linter.
 
 options(mc.cores = parallel::detectCores())
 
