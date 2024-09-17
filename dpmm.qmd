@@ -3,19 +3,35 @@ title: "Dirichlet Process Mixture Model"
 format: html
 ---
 
-R code for the model is tajeb from "A tutorial on Dirichlet process mixture modeling" by Yuelin Li et al.
+R code for the model is takeb from "A tutorial on Dirichlet process mixture modeling" by Yuelin Li et al.
 
 Model definition:
 $$
-Y_1, \cdots Y_N | \mathbf{\mu}, 
+\Pi_N \sim CRP(N, \alpha) 
 $$
+
+$$
+\forall c \in \Pi_N; \quad \mu_c \sim \mathcal{N}(\mu_0, \Sigma_0) \text{ and let } \tau_0 = \Sigma_0^{-1}
+$$
+
+$$
+\forall c \in \Pi_N, \forall n \in c; \quad Y_n \sim \mathcal{N}(\mu_c, \Sigma_y) \text{ where } \tau_y = \Sigma_y^{-1} \text{ is assumed known.}
+$$
+
+**Goal:** We want to use Gibbs Sampling to sample from the posterior distribution $p(\pi_N | Y_1, \cdots, Y_N)$. This posterior represents an updated distribution over set of all possible partitions of data. 
+
+**Notation:**
+1. `z`: $N \times 1$ vector of cluster assignments.
+2. `n_k`: vector containing num. of data points in each of $k$ (which is _not_ fixed) clusters.
+3. `Nclust`: total number of clusters
+4. Data `y` is $D$-dimensional.
 
 ```{r}
 library(mvtnorm)
 ```
 
 ```{r}
-crp_gibbs <- function(data ,alpha = 0.01 ,mu0 ,sigma0, sigma_y, c_init, maxIters=1000) 
+crp_gibbs <- function(data ,alpha = 0.01 ,mu0 ,sigma0, sigma_y, c_init, maxIters = 1000) 
 {
 #  data: an N by D matrix of data points
 #  alpha: positive scalar that controls the rate at which clusters are formed. 
@@ -52,15 +68,17 @@ Nclust <- length(n_k)      # initial number of clusters
 # Chinese Restaurant Process (CRP) Gibbs sampler begins 
 
 # cluster membership storage
+# Each row corresponds to a MC chain for the n-th data point
 res <- matrix(NA, nrow = N, ncol = maxIters)  
 
+# progress bar to track progress of iterations
 pb <- txtProgressBar(min = 0, max = maxIters, style = 3) 
 
 
 for(iter in 1:maxIters) { 
   for(n in 1:N) {    # one data point (customer) at a time 
 
-# what is the nth person's table assignment? 
+# what is the nth person's table/cluster assignment? 
 c_i <- z[n] 
 # remove the nth person from table 
 n_k[c_i] <- n_k[c_i] - 1 
@@ -85,7 +103,7 @@ z[n] <- -1
 logp <- rep( NA, Nclust + 1 ) 
 
 
-# loop over already occupied tables 1:J and calculate pr as per Eq (13). 
+# loop over already occupied tables 1:J and calculate prob as per Eq (13). 
 for( c_i in 1:Nclust ) { 
 
   tau_p <- tau0 + n_k[c_i] * tau_y  # cluster precision as per Eq (4)
