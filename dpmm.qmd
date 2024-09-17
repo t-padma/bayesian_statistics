@@ -21,6 +21,7 @@ $$
 **Goal:** We want to use Gibbs Sampling to sample from the posterior distribution $p(\pi_N | Y_1, \cdots, Y_N)$. This posterior represents an updated distribution over set of all possible partitions of data. 
 
 **Notation:**
+
 1. `z`: $N \times 1$ vector of cluster assignments.
 2. `n_k`: vector containing num. of data points in each of $k$ (which is _not_ fixed) clusters.
 3. `Nclust`: total number of clusters

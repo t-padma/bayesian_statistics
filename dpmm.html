@@ -136,7 +136,13 @@ window.Quarto = {
 \forall c \in \Pi_N, \forall n \in c; \quad Y_n \sim \mathcal{N}(\mu_c, \Sigma_y) \text{ where } \tau_y = \Sigma_y^{-1} \text{ is assumed known.}
 \]</span></p>
 <p><strong>Goal:</strong> We want to use Gibbs Sampling to sample from the posterior distribution <span class="math inline">\(p(\pi_N | Y_1, \cdots, Y_N)\)</span>. This posterior represents an updated distribution over set of all possible partitions of data.</p>
-<p><strong>Notation:</strong> 1. <code>z</code>: <span class="math inline">\(N \times 1\)</span> vector of cluster assignments. 2. <code>n_k</code>: vector containing num. of data points in each of <span class="math inline">\(k\)</span> (which is <em>not</em> fixed) clusters. 3. <code>Nclust</code>: total number of clusters 4. Data <code>y</code> is <span class="math inline">\(D\)</span>-dimensional.</p>
+<p><strong>Notation:</strong></p>
+<ol type="1">
+<li><code>z</code>: <span class="math inline">\(N \times 1\)</span> vector of cluster assignments.</li>
+<li><code>n_k</code>: vector containing num. of data points in each of <span class="math inline">\(k\)</span> (which is <em>not</em> fixed) clusters.</li>
+<li><code>Nclust</code>: total number of clusters</li>
+<li>Data <code>y</code> is <span class="math inline">\(D\)</span>-dimensional.</li>
+</ol>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mvtnorm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

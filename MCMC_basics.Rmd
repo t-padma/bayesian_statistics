@@ -1,5 +1,0 @@
----
-title: "MCMC basics"
-output: html_notebook
----
-
