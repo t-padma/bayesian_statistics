@@ -135,6 +135,8 @@ window.Quarto = {
 <p><span class="math display">\[
 \forall c \in \Pi_N, \forall n \in c; \quad Y_n \sim \mathcal{N}(\mu_c, \Sigma_y) \text{ where } \tau_y = \Sigma_y^{-1} \text{ is assumed known.}
 \]</span></p>
+<p><strong>Goal:</strong> We want to use Gibbs Sampling to sample from the posterior distribution <span class="math inline">\(p(\pi_N | Y_1, \cdots, Y_N)\)</span>. This posterior represents an updated distribution over set of all possible partitions of data.</p>
+<p><strong>Notation:</strong> 1. <code>z</code>: <span class="math inline">\(N \times 1\)</span> vector of cluster assignments. 2. <code>n_k</code>: vector containing num. of data points in each of <span class="math inline">\(k\)</span> (which is <em>not</em> fixed) clusters. 3. <code>Nclust</code>: total number of clusters 4. Data <code>y</code> is <span class="math inline">\(D\)</span>-dimensional.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mvtnorm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -176,106 +178,108 @@ window.Quarto = {
 <span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Chinese Restaurant Process (CRP) Gibbs sampler begins </span></span>
 <span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co"># cluster membership storage</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> N, <span class="at">ncol =</span> maxIters)  </span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> maxIters, <span class="at">style =</span> <span class="dv">3</span>) </span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(iter <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>maxIters) { </span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N) {    <span class="co"># one data point (customer) at a time </span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="co"># what is the nth person's table assignment? </span></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>c_i <span class="ot">&lt;-</span> z[n] </span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="co"># remove the nth person from table </span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>n_k[c_i] <span class="ot">&lt;-</span> n_k[c_i] <span class="sc">-</span> <span class="dv">1</span> </span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="co"># if the table becomes empty when the nth person is removed, </span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="co"># then that table/cluster is removed. </span></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>( n_k[c_i] <span class="sc">==</span> <span class="dv">0</span> ) </span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>{ </span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>  n_k[c_i] <span class="ot">&lt;-</span> n_k[Nclust]   <span class="co"># last cluster to replace this empty cluster </span></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>  loc_z <span class="ot">&lt;-</span> ( z <span class="sc">==</span> Nclust )  <span class="co"># who are in the last cluster? </span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  z[loc_z] <span class="ot">&lt;-</span> c_i           <span class="co"># move them up to fill just emptied cluster </span></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>  n_k <span class="ot">&lt;-</span> n_k[ <span class="sc">-</span>Nclust ]     <span class="co"># take out the last cluster, now empty </span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  Nclust <span class="ot">&lt;-</span> Nclust <span class="sc">-</span> <span class="dv">1</span>      <span class="co"># decrease total number of clusters by 1 </span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>} </span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="co"># ensures z[n] doesn't get counted as a cluster</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>z[n] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span> </span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="co"># Now we are ready to update table assignment by Eqs (12) and (13). </span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="co"># log probabilities for the clusters, add previously unoccupied table </span></span>
-<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>logp <span class="ot">&lt;-</span> <span class="fu">rep</span>( <span class="cn">NA</span>, Nclust <span class="sc">+</span> <span class="dv">1</span> ) </span>
-<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over already occupied tables 1:J and calculate pr as per Eq (13). </span></span>
-<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>( c_i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>Nclust ) { </span>
-<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>  tau_p <span class="ot">&lt;-</span> tau0 <span class="sc">+</span> n_k[c_i] <span class="sc">*</span> tau_y  <span class="co"># cluster precision as per Eq (4)</span></span>
-<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a>  sig_p <span class="ot">&lt;-</span> <span class="fu">solve</span>(tau_p)             <span class="co"># cluster variance, inverse of tau_c</span></span>
-<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>  <span class="co"># find all of the points in this cluster </span></span>
-<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>  loc_z <span class="ot">&lt;-</span> <span class="fu">which</span>(z <span class="sc">==</span> c_i) </span>
-<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sum all the points in this cluster </span></span>
-<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">length</span>(loc_z) <span class="sc">&gt;</span> <span class="dv">1</span>) { </span>
-<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>    sum_data <span class="ot">&lt;-</span>  <span class="fu">colSums</span>(data[z <span class="sc">==</span> c_i, ]) } </span>
-<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> { </span>
-<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>    sum_data <span class="ot">&lt;-</span>  data[z <span class="sc">==</span> c_i, ] </span>
-<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>  } </span>
-<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a><span class="co"># We need to use the predictive distribution of each already </span></span>
-<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a><span class="co"># occupied table to predict the next customer sitting there. </span></span>
-<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a><span class="co"># Use Eq (4) to find the conditional posterior distribution for </span></span>
-<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="co"># the cluster means, then use the predictive distribution of </span></span>
-<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a><span class="co"># y_j in Eq (12) to predict new data value c_i from c-i. </span></span>
-<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>mean_p <span class="ot">&lt;-</span>  sig_p <span class="sc">%*%</span> (tau_y <span class="sc">%*%</span> sum_data <span class="sc">+</span> tau0 <span class="sc">%*%</span> <span class="fu">t</span>(mu0)) </span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Each row corresponds to a MC chain for the n-th data point</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> N, <span class="at">ncol =</span> maxIters)  </span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="co"># progress bar to track progress of iterations</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> maxIters, <span class="at">style =</span> <span class="dv">3</span>) </span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(iter <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>maxIters) { </span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N) {    <span class="co"># one data point (customer) at a time </span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="co"># what is the nth person's table/cluster assignment? </span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>c_i <span class="ot">&lt;-</span> z[n] </span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="co"># remove the nth person from table </span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>n_k[c_i] <span class="ot">&lt;-</span> n_k[c_i] <span class="sc">-</span> <span class="dv">1</span> </span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="co"># if the table becomes empty when the nth person is removed, </span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="co"># then that table/cluster is removed. </span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>( n_k[c_i] <span class="sc">==</span> <span class="dv">0</span> ) </span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>{ </span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  n_k[c_i] <span class="ot">&lt;-</span> n_k[Nclust]   <span class="co"># last cluster to replace this empty cluster </span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>  loc_z <span class="ot">&lt;-</span> ( z <span class="sc">==</span> Nclust )  <span class="co"># who are in the last cluster? </span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  z[loc_z] <span class="ot">&lt;-</span> c_i           <span class="co"># move them up to fill just emptied cluster </span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>  n_k <span class="ot">&lt;-</span> n_k[ <span class="sc">-</span>Nclust ]     <span class="co"># take out the last cluster, now empty </span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>  Nclust <span class="ot">&lt;-</span> Nclust <span class="sc">-</span> <span class="dv">1</span>      <span class="co"># decrease total number of clusters by 1 </span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>} </span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="co"># ensures z[n] doesn't get counted as a cluster</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>z[n] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span> </span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Now we are ready to update table assignment by Eqs (12) and (13). </span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a><span class="co"># log probabilities for the clusters, add previously unoccupied table </span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>logp <span class="ot">&lt;-</span> <span class="fu">rep</span>( <span class="cn">NA</span>, Nclust <span class="sc">+</span> <span class="dv">1</span> ) </span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="co"># loop over already occupied tables 1:J and calculate prob as per Eq (13). </span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>( c_i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>Nclust ) { </span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>  tau_p <span class="ot">&lt;-</span> tau0 <span class="sc">+</span> n_k[c_i] <span class="sc">*</span> tau_y  <span class="co"># cluster precision as per Eq (4)</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>  sig_p <span class="ot">&lt;-</span> <span class="fu">solve</span>(tau_p)             <span class="co"># cluster variance, inverse of tau_c</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>  <span class="co"># find all of the points in this cluster </span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>  loc_z <span class="ot">&lt;-</span> <span class="fu">which</span>(z <span class="sc">==</span> c_i) </span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sum all the points in this cluster </span></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">length</span>(loc_z) <span class="sc">&gt;</span> <span class="dv">1</span>) { </span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>    sum_data <span class="ot">&lt;-</span>  <span class="fu">colSums</span>(data[z <span class="sc">==</span> c_i, ]) } </span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> { </span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>    sum_data <span class="ot">&lt;-</span>  data[z <span class="sc">==</span> c_i, ] </span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>  } </span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="co"># We need to use the predictive distribution of each already </span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a><span class="co"># occupied table to predict the next customer sitting there. </span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a><span class="co"># Use Eq (4) to find the conditional posterior distribution for </span></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="co"># the cluster means, then use the predictive distribution of </span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a><span class="co"># y_j in Eq (12) to predict new data value c_i from c-i. </span></span>
 <span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>logp[c_i] <span class="ot">&lt;-</span> <span class="fu">log</span>(n_k[c_i]) <span class="sc">+</span> </span>
-<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>   <span class="fu">dmvnorm</span>(data[n,], <span class="at">mean =</span> mean_p, <span class="at">sigma =</span> sig_p <span class="sc">+</span> sigma_y, <span class="at">log =</span> <span class="cn">TRUE</span>) </span>
-<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>} <span class="co"># for loop ends</span></span>
-<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a><span class="co"># We are done looping over already occupied tables.</span></span>
-<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a><span class="co"># Next, we use Eq (13) to calcualte the log probability of a previously </span></span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a><span class="co"># unoccupied, "new" table. Essentially, it is the prior predicitive </span></span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="co"># distribution of the DP.</span></span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>logp[ Nclust<span class="sc">+</span><span class="dv">1</span> ] <span class="ot">&lt;-</span> <span class="fu">log</span>(alpha) <span class="sc">+</span> <span class="fu">dmvnorm</span>(data[n,], <span class="at">mean =</span> mu0, <span class="at">sigma =</span> sigma0 <span class="sc">+</span> sigma_y, <span class="at">log =</span> <span class="cn">TRUE</span>) </span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a><span class="co"># transform unnormalized log probabilities into probabilities </span></span>
-<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>max_logp <span class="ot">&lt;-</span> <span class="fu">max</span>(logp) </span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>logp <span class="ot">&lt;-</span> logp <span class="sc">-</span> max_logp </span>
-<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>loc_probs <span class="ot">&lt;-</span> <span class="fu">exp</span>(logp) </span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>loc_probs <span class="ot">&lt;-</span> loc_probs <span class="sc">/</span> <span class="fu">sum</span>(loc_probs) </span>
-<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="co"># draw a sample of which cluster this new customer should belong to </span></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>newz <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>(Nclust<span class="sc">+</span><span class="dv">1</span>), <span class="dv">1</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> loc_probs) </span>
-<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a><span class="co"># spawn a new cluster if necessary </span></span>
-<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(newz <span class="sc">==</span> Nclust <span class="sc">+</span> <span class="dv">1</span>) { </span>
-<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>  n_k <span class="ot">&lt;-</span> <span class="fu">c</span>(n_k, <span class="dv">0</span>) </span>
-<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>  Nclust <span class="ot">&lt;-</span> Nclust <span class="sc">+</span> <span class="dv">1</span> </span>
-<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>  } </span>
-<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>z[n] <span class="ot">&lt;-</span> newz </span>
-<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>n_k[newz] <span class="ot">&lt;-</span> n_k[newz] <span class="sc">+</span> <span class="dv">1</span> <span class="co"># update the cluster n_k </span></span>
-<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a><span class="co"># update text progress bar after each iter </span></span>
-<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="fu">setTxtProgressBar</span>(pb, iter) </span>
-<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="co"># cluster membership of N observations</span></span>
-<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a>res[, iter] <span class="ot">&lt;-</span> z     </span>
-<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a>} </span>
-<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="fu">close</span>(pb)            <span class="co"># close text progress bar </span></span>
-<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(res)       <span class="co"># return results, N by maxIters matrix </span></span>
-<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>mean_p <span class="ot">&lt;-</span>  sig_p <span class="sc">%*%</span> (tau_y <span class="sc">%*%</span> sum_data <span class="sc">+</span> tau0 <span class="sc">%*%</span> <span class="fu">t</span>(mu0)) </span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>logp[c_i] <span class="ot">&lt;-</span> <span class="fu">log</span>(n_k[c_i]) <span class="sc">+</span> </span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>   <span class="fu">dmvnorm</span>(data[n,], <span class="at">mean =</span> mean_p, <span class="at">sigma =</span> sig_p <span class="sc">+</span> sigma_y, <span class="at">log =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>} <span class="co"># for loop ends</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a><span class="co"># We are done looping over already occupied tables.</span></span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="co"># Next, we use Eq (13) to calcualte the log probability of a previously </span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="co"># unoccupied, "new" table. Essentially, it is the prior predicitive </span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a><span class="co"># distribution of the DP.</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>logp[ Nclust<span class="sc">+</span><span class="dv">1</span> ] <span class="ot">&lt;-</span> <span class="fu">log</span>(alpha) <span class="sc">+</span> <span class="fu">dmvnorm</span>(data[n,], <span class="at">mean =</span> mu0, <span class="at">sigma =</span> sigma0 <span class="sc">+</span> sigma_y, <span class="at">log =</span> <span class="cn">TRUE</span>) </span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="co"># transform unnormalized log probabilities into probabilities </span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>max_logp <span class="ot">&lt;-</span> <span class="fu">max</span>(logp) </span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>logp <span class="ot">&lt;-</span> logp <span class="sc">-</span> max_logp </span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>loc_probs <span class="ot">&lt;-</span> <span class="fu">exp</span>(logp) </span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>loc_probs <span class="ot">&lt;-</span> loc_probs <span class="sc">/</span> <span class="fu">sum</span>(loc_probs) </span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a><span class="co"># draw a sample of which cluster this new customer should belong to </span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>newz <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>(Nclust<span class="sc">+</span><span class="dv">1</span>), <span class="dv">1</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> loc_probs) </span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a><span class="co"># spawn a new cluster if necessary </span></span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(newz <span class="sc">==</span> Nclust <span class="sc">+</span> <span class="dv">1</span>) { </span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>  n_k <span class="ot">&lt;-</span> <span class="fu">c</span>(n_k, <span class="dv">0</span>) </span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>  Nclust <span class="ot">&lt;-</span> Nclust <span class="sc">+</span> <span class="dv">1</span> </span>
+<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>  } </span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>z[n] <span class="ot">&lt;-</span> newz </span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a>n_k[newz] <span class="ot">&lt;-</span> n_k[newz] <span class="sc">+</span> <span class="dv">1</span> <span class="co"># update the cluster n_k </span></span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a><span class="co"># update text progress bar after each iter </span></span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="fu">setTxtProgressBar</span>(pb, iter) </span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="co"># cluster membership of N observations</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a>res[, iter] <span class="ot">&lt;-</span> z     </span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a>} </span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a><span class="fu">close</span>(pb)            <span class="co"># close text progress bar </span></span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(res)       <span class="co"># return results, N by maxIters matrix </span></span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="reference" class="level3">
 <h3 class="anchored" data-anchor-id="reference">Reference:</h3>
