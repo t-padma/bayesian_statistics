@@ -1,0 +1,66 @@
+---
+title: "Few plots"
+format: html
+---
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+```
+
+## Beta distribution
+a, b $\geq 1$
+```{r}
+param_vals <- seq(0,1,by = 0.01)
+dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
+debta_1_5 <- dbeta(x = param_vals, shape1 = 1, shape2 = 5)
+debta_5_1 <- dbeta(x = param_vals, shape1 = 5, shape2 = 1)
+data1 <- data.frame(param_vals, dbeta_1_1, debta_1_5, debta_5_1)
+
+matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=15:17) 
+legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(1,5)", "Beta(5,1)"),pch=15:17, bg= ("white"), horiz=F) 
+title(main = expression("a and b " >= "1"), xlab = "Parameter values", ylab = "density")
+```
+
+$a = b \geq 1$
+```{r}
+param_vals <- seq(0,1,by = 0.01)
+dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
+debta_3_3 <- dbeta(x = param_vals, shape1 = 3, shape2 = 3)
+debta_8_8 <- dbeta(x = param_vals, shape1 = 8, shape2 = 8)
+data1 <- data.frame(param_vals, dbeta_1_1, debta_3_3, debta_8_8)
+
+matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
+legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(3,3)", "Beta(8,8)"),pch=5:7, bg= ("white"), horiz=F) 
+title(main = expression("a = b " >= "1"), xlab = "Parameter values", ylab = "density")
+```
+
+$a , b \leq 1$
+```{r}
+param_vals <- seq(0,1,by = 0.01)
+dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
+debta_0.1_0.8 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 0.8)
+debta_0.8_0.1 <- dbeta(x = param_vals, shape1 = 0.8, shape2 = 0.1)
+data1 <- data.frame(param_vals, dbeta_1_1, debta_0.1_0.8, debta_0.8_0.1)
+
+matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
+legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(0.1,0.8)", "Beta(0.8,0.1)"),pch=5:7, bg= ("white"), horiz=F) 
+title(main = expression("a and b " <= "1"), xlab = "Parameter values", ylab = "density")
+```
+
+one of a, b is more than or equal to 1.
+```{r}
+param_vals <- seq(0,1,by = 0.01)
+dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
+debta_0.1_3 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 3)
+debta_0.1_7 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 7)
+debta_3_0.1 <- dbeta(x = param_vals, shape1 = 3, shape2 = 0.1)
+debta_7_0.1 <- dbeta(x = param_vals, shape1 = 7, shape2 = 0.1)
+data1 <- data.frame(param_vals, dbeta_1_1, debta_0.1_3, debta_3_0.1, debta_0.1_7 ,debta_7_0.1)
+
+matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=8:12, ylim = c(0,3)) 
+legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(0.1,3)", "Beta(3,0.1)", "Beta(0.1,7)", "Beta(7,0.1)"),pch=8:12, bg= ("white"), horiz=F) 
+title(main = expression("a or b " < "1"), xlab = "Parameter values", ylab = "density")
+```
+
+
