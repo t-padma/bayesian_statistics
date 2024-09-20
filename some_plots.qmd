@@ -17,9 +17,12 @@ debta_1_5 <- dbeta(x = param_vals, shape1 = 1, shape2 = 5)
 debta_5_1 <- dbeta(x = param_vals, shape1 = 5, shape2 = 1)
 data1 <- data.frame(param_vals, dbeta_1_1, debta_1_5, debta_5_1)
 
+#setEPS() 
+#postscript("ab_geq_1.eps")
 matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=15:17) 
-legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(1,5)", "Beta(5,1)"),pch=15:17, bg= ("white"), horiz=F) 
+legend("topleft", inset=0.01, legend=c("Beta(1,1)", "Beta(1,5)", "Beta(5,1)"),col=c("black","red", "green"), lty=1, cex=0.8)
 title(main = expression("a and b " >= "1"), xlab = "Parameter values", ylab = "density")
+#dev.off()
 ```
 
 $a = b \geq 1$
@@ -28,10 +31,10 @@ param_vals <- seq(0,1,by = 0.01)
 dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
 debta_3_3 <- dbeta(x = param_vals, shape1 = 3, shape2 = 3)
 debta_8_8 <- dbeta(x = param_vals, shape1 = 8, shape2 = 8)
-data1 <- data.frame(param_vals, dbeta_1_1, debta_3_3, debta_8_8)
+data2 <- data.frame(param_vals, dbeta_1_1, debta_3_3, debta_8_8)
 
-matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
-legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(3,3)", "Beta(8,8)"),pch=5:7, bg= ("white"), horiz=F) 
+matplot(data2[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
+legend("topleft", inset=0.01, legend=c("Beta(1,1)", "Beta(3,3)", "Beta(8,8)"),col=c("black","red", "green"), lty=1, cex=0.8)
 title(main = expression("a = b " >= "1"), xlab = "Parameter values", ylab = "density")
 ```
 
@@ -41,10 +44,10 @@ param_vals <- seq(0,1,by = 0.01)
 dbeta_1_1 <- dbeta(x = param_vals, shape1 = 1, shape2 = 1)
 debta_0.1_0.8 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 0.8)
 debta_0.8_0.1 <- dbeta(x = param_vals, shape1 = 0.8, shape2 = 0.1)
-data1 <- data.frame(param_vals, dbeta_1_1, debta_0.1_0.8, debta_0.8_0.1)
+data3 <- data.frame(param_vals, dbeta_1_1, debta_0.1_0.8, debta_0.8_0.1)
 
-matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
-legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(0.1,0.8)", "Beta(0.8,0.1)"),pch=5:7, bg= ("white"), horiz=F) 
+matplot(data3[,-1], type = "l", lwd = 4, lty = 1, pch=5:7) 
+legend("topleft", inset=0.01, legend=c("Beta(1,1)", "Beta(0.1,0.8)", "Beta(0.8,0.1)"),col=c("black","red", "green"), lty=1, cex=0.8)
 title(main = expression("a and b " <= "1"), xlab = "Parameter values", ylab = "density")
 ```
 
@@ -56,11 +59,38 @@ debta_0.1_3 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 3)
 debta_0.1_7 <- dbeta(x = param_vals, shape1 = 0.1, shape2 = 7)
 debta_3_0.1 <- dbeta(x = param_vals, shape1 = 3, shape2 = 0.1)
 debta_7_0.1 <- dbeta(x = param_vals, shape1 = 7, shape2 = 0.1)
-data1 <- data.frame(param_vals, dbeta_1_1, debta_0.1_3, debta_3_0.1, debta_0.1_7 ,debta_7_0.1)
+data4 <- data.frame(param_vals, dbeta_1_1, debta_0.1_3, debta_3_0.1, debta_0.1_7 ,debta_7_0.1)
 
-matplot(data1[,-1], type = "l", lwd = 4, lty = 1, pch=8:12, ylim = c(0,3)) 
-legend("topleft", inset=0.01, legend= c("Beta(1,1)", "Beta(0.1,3)", "Beta(3,0.1)", "Beta(0.1,7)", "Beta(7,0.1)"),pch=8:12, bg= ("white"), horiz=F) 
+matplot(data4[,-1], type = "l", lwd = 4, lty = 1, pch=1:5, ylim = c(0,2)) 
+legend("topleft", inset=0.01, legend=c("Beta(1,1)", "Beta(0.1,3)", "Beta(3,0.1)", "Beta(0.1,7)", "Beta(7,0.1)"),col=c("black","red", "green", "blue", "cyan"), lty=1, cex=0.8)
 title(main = expression("a or b " < "1"), xlab = "Parameter values", ylab = "density")
 ```
 
 
+Arranging the plots using `par(mfrow = )` and save it as an image using `setEPS()`
+```{r}
+setEPS() 
+postscript("beta_prior.eps")
+par(mfrow = c(2, 2))
+
+# plot 1
+matplot(data1[,-1], type = "l", lwd = 1, lty = 1, pch=15:17, ylab = "density", xlab = "Parameter values") 
+legend("top", inset=0.01, legend=c("Beta(1,1)", "Beta(1,5)", "Beta(5,1)"),col=c("black","red", "green"), lty=1, cex=0.8)
+title(main = expression("a and b " >= "1"), xlab = "Parameter values", ylab = "density")
+
+# plot 2
+matplot(data2[,-1], type = "l", lwd = 1, lty = 1, pch=5:7, ylab = "density", xlab = "Parameter values") 
+legend("topleft", inset=0.01, legend=c("Beta(1,1)", "Beta(3,3)", "Beta(8,8)"),col=c("black","red", "green"), lty=1, cex=0.8)
+title(main = expression("a = b " >= "1"), xlab = "Parameter values", ylab = "density")
+
+# plot 3
+matplot(data3[,-1], type = "l", lwd = 1, lty = 1, pch=5:7, ylab = "density", xlab = "Parameter values") 
+legend("top", inset=0.01, legend=c("Beta(1,1)", "Beta(0.1,0.8)", "Beta(0.8,0.1)"),col=c("black","red", "green"), lty=1, cex=0.8)
+title(main = expression("a and b " <= "1"), xlab = "Parameter values", ylab = "density")
+
+# plot 4
+matplot(data4[,-1], type = "l", lwd = 1, lty = 1, pch=1:5, ylim = c(0,2), ylab = "density", xlab = "Parameter values") 
+legend("top", inset=0.01, legend=c("Beta(1,1)", "Beta(0.1,3)", "Beta(3,0.1)", "Beta(0.1,7)", "Beta(7,0.1)"),col=c("black","red", "green", "blue", "cyan"), lty=1, cex=0.8)
+title(main = expression("a or b " < "1"), xlab = "Parameter values", ylab = "density")
+dev.off()
+```
