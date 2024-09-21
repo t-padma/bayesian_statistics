@@ -94,3 +94,47 @@ legend("top", inset=0.01, legend=c("Beta(1,1)", "Beta(0.1,3)", "Beta(3,0.1)", "B
 title(main = expression("a or b " < "1"), xlab = "Parameter values", ylab = "density")
 dev.off()
 ```
+
+## Dirichlet distribution when K=3
+We focus on ternery plots
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+alpha1 <- c(1, 1, 1)  # Dirichlet parameters
+alpha3 <- c(3,3,3)
+alpha8 <- c(8,8,8)
+N <- 500  # Number of samples
+
+data1 <- as.data.frame(rdirichlet(N, alpha1))
+data3 <- as.data.frame(rdirichlet(N, alpha3))
+data8 <- as.data.frame(rdirichlet(N, alpha8))
+
+# name the three categories
+colnames(data1) <- c("Category_1", "Category_2", "Category_3") 
+colnames(data3) <- c("Category_1", "Category_2", "Category_3")
+colnames(data8) <- c("Category_1", "Category_2", "Category_3")
+
+# Create a ternary plot
+ggtern(mapping = aes(x = Category_1, y = Category_2, z = Category_3)) +
+        geom_point(data = data1, color = "red") +
+        geom_point(data = data3, color = "blue") +
+        geom_point(data = data8, color = "yellow")    
+```
+
+```{r}
+data1 %>%            # dataset we want to reshape
+  pivot_longer(             # we want to inc rows and dec cols
+    cols = !religion,       # which cols to reshape
+    names_to = "income",    # name of the var under which above col names will go
+    values_to = "count"     # name of the variable for cell values
+  )
+```
+
+
+
+
+
+

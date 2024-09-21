@@ -101,10 +101,19 @@ mcmc_dens(bb_sim, pars = "pi") +
 * Answering the above diagnostics related questions is both an art and science. With experience, one gets a feel for "good" and "bad" Markov chains. Chapter 6 of the textbook looks at some visual and numerical diagnostic tools. These tools need to be used _holistically_
     * Visual diagnostic tools: **trace plots, parallel chains**.
     * numerical diagnostics: **effective sample size, autocorrelation** and **R-hat**.
-* A "good" trace plot looks like a bunch of white noise with no discernible trends or notable phenomena. This nothingness implies that the **chain is stable**. The traceplots below are taken from Ch6 of the Bayesrules textbook.
+* A "good" trace plot looks like a bunch of white noise with no discernible trends or notable phenomena. This nothingness implies that the **chain is stable**. 
+
+* The traceplots below are taken from Ch6 of the Bayesrules textbook. They are examples of "bad" chain behaviour.
 
 ![](./images/trace.png)
 
+> First, consider the trace plots in Figure 6.12 (left). The downward trend in Chain A indicates that it has not yet stabilized after 5,000 iterations – it has not yet “found” or does not yet know how to explore the range of posterior plausible π values. The downward trend also hints at strong correlation among the chain values – they don’t look like independent noise. All of this to say that Chain A is mixing slowly. This is bad. Though Markov chains are inherently dependent, the more they behave like fast mixing (noisy) independent samples, the smaller the error in the resulting posterior approximation (roughly speaking). Chain B exhibits a different problem. As evidenced by the two completely flat lines in the trace plot, it tends to get stuck when it visits smaller values of π.
+
+> The density plots in Figure 6.12 (right) confirm that both of these goofy-looking chains result in a serious issue: they produce poor approximations of the Beta(11,3) posterior (superimposed in black), and thus misleading posterior conclusions. Consider Chain A. Since it’s mixing so slowly, it has only explored π values in the rough range from 0.6 to 0.9 in its first 5,000 iterations. As a result, its posterior approximation overestimates the plausibility of π values in this range while completely underestimating the plausibility of values outside this range. Next, consider Chain B. In getting stuck, Chain B over-samples some values in the left tail of the posterior π values. This phenomenon produces the erroneous spikes in the posterior approximation.
+
+* Some steps one can take if they see bad MC diagnostic plots:
+  * Check the model. Are the assumed prior and data models appropriate?
+  * Run the chain for more iterations. Some undesirable short-term chain trends might iron out in the long term.
 
 
 
@@ -122,10 +131,8 @@ mcmc_dens(bb_sim, pars = "pi") +
 
 
 
-
-
-
-
+## References
+1. For posterior inference: Check Ch 6,7,8 of [Bayes Rules!](https://www.bayesrulesbook.com/) textbook by Alicia A. Johnson, Miles Q. Ott, and Mine Dogucu.
 
 
 
