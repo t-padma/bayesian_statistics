@@ -101,6 +101,8 @@ We focus on ternery plots
 ```{r}
 library(tidyverse)
 library(ggtern)
+library(reticulate)
+library(MCMCpack)
 ```
 
 ```{r}
