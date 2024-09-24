@@ -1,0 +1,258 @@
+---
+title: "Nimble"
+format: html
+---
+
+* NIMBLE is a system for building and sharing analysis methods for statistical models from R, especially for hierarchical models and computationally-intensive methods.
+
+* Minble uses a compiler that generates C++ for your models and algorithms, compiles that C++, and lets you use it seamlessly from R without knowing anything about C++.
+
+* NIMBLE stands for Numerical Inference for statistical Models for Bayesian and Likelihood Estimation.
+
+```{r}
+library(nimble)
+```
+
+
+**Model:**
+$$
+X_i | \theta_i \sim Pois(\theta_i \cdot t_i ) 
+$$
+
+$$
+\theta_i \cdot t_i | \alpha, \beta \sim Gamma(\alpha, \beta)
+$$
+
+$$
+\alpha \sim Exp(1) \mathrm{ and } \beta \sim Gamma(0.1,1)
+$$
+
+```{r}
+# define the Bayesian model
+pumpCode <- nimbleCode({ 
+  for (i in 1:N){
+      theta[i] ~ dgamma(alpha,beta)
+      lambda[i] <- theta[i]*t[i]
+      x[i] ~ dpois(lambda[i])
+  }
+  alpha ~ dexp(1.0)
+  beta ~ dgamma(0.1,1.0)
+})
+
+# num. of sample points N = 10
+# t[i] = length of time duration for i-th pump
+pumpConsts <- list(N = 10,
+                   t = c(94.3, 15.7, 62.9, 126, 5.24,
+                       31.4, 1.05, 1.05, 2.1, 10.5))
+
+
+# x[i] = num. of pump failures recorded during time period t[i]
+pumpData <- list(x = c(5, 1, 5, 14, 3, 19, 1, 1, 4, 22))
+
+
+# initializing the MCMC chain for posterior f(theta, alpha, beta| x)
+pumpInits <- list(alpha = 1, beta = 1,
+                  theta = rep(0.1, pumpConsts$N))
+```
+
+
+```{r}
+# define the model
+pump <- nimbleModel(code = pumpCode, name = "pump", constants = pumpConsts,
+                    data = pumpData, inits = pumpInits)
+```
+
+
+```{r}
+pump$getNodeNames()
+```
+
+```{r}
+# vector containing x values
+pump$x
+
+# computes log(Prob(X = x[i])) when X ~ Pois(t[i]*theta[i]) for i = 1, .. N
+# For eg, check log(dpois(x = 5,lambda = 0.1*94.3))
+pump$logProb_x
+```
+
+
+```{r}
+# initial chain values for alpha and beta
+pump$alpha ; pump$beta
+```
+
+```{r}
+# theta[i] = 0.1 for all i = 1,.. N
+pump$theta
+
+# lambda[i] = theta[i]*t[i]
+pump$lambda
+```
+
+* Notice that in the list of nodes, NIMBLE has introduced a new node, `lifted_d1_over_beta`. We call this a ‘lifted’ node. 
+> NIMBLE allows alternative parameterizations, such as the scale or rate parameterization of the gamma distribution. Choice of parameterization can generate a lifted node, as can using a link function or a distribution argument that is an expression. It’s helpful to know why they exist, but you shouldn’t need to worry about them.
+
+```{r}
+pump$lifted_d1_over_beta
+```
+
+```{r}
+# gives the DAG representation of pump model
+pump$plotGraph()
+```
+
+
+```{r}
+# show all dependencies of alpha and beta terminating in stochastic nodes
+pump$getDependencies(c("alpha", "beta"))
+
+# now show only the deterministic dependencies
+pump$getDependencies(c("alpha", "beta"), determOnly = TRUE)
+```
+
+> You are in control of the model. By default, `nimbleModel` does its best to initialize a model, but let’s say you want to re-initialize `theta`. To simulate from the prior for `theta` (overwriting the initial values previously in the model) we first need to be sure the parent nodes of all `theta[i]` nodes are fully initialized, including any non-stochastic nodes such as lifted nodes. We then use the `simulate` function to simulate from the distribution for `theta`. 
+
+
+```{r}
+# use simulate to simulate new theta values
+set.seed(1)
+pump$simulate("theta")
+pump$theta   # the new theta values
+```
+
+> Finally we use the `calculate` function to calculate the dependencies of `theta`, namely `lambda` and the log probabilities of `x` to ensure all parts of the model are up to date.
+
+```{r}
+# notice that logprob_x and lambda aren't yet updated
+pump$lambda
+pump$logProb_x
+```
+
+```{r}
+# use calculate() to update values dependent on theta in the DAG
+# what is this output?
+pump$calculate(pump$getDependencies(c("theta")))
+```
+
+```{r}
+# updated lambda and logprob_x
+pump$lambda
+pump$logProb_x
+```
+
+
+* Next step is to compile the model, which means: generating C++ code, compiling that code, and loading it back into R with an object that can be used just like the uncompiled model.
+
+*  The values in the compiled model will be initialized from those of the original model in R, but the original and compiled models are distinct objects so any subsequent changes in one will not be reflected in the other.
+
+* Note that the compiled model is used when running any NIMBLE algorithms via C++, so the model needs to be compiled before (or at the same time as) any compilation of algorithms, such as the compilation of the MCMC.
+
+```{r}
+Cpump <- compileNimble(pump)
+Cpump$theta
+```
+
+The most direct approach to invoking NIMBLE’s MCMC engine is using the `nimbleMCMC` function. This function would generally take the code, data, constants, and initial values as input, but it can also accept the (compiled or uncompiled) model object as an argument. It provides a variety of options for executing and controlling multiple chains of NIMBLE’s default MCMC algorithm, and returning posterior samples, posterior summary statistics, and/or WAIC values.
+
+```{r}
+# to execute two MCMC chains of 10 samples each, and return samples, summary statistics, and WAIC values
+mcmc.out <- nimbleMCMC(code = pumpCode, constants = pumpConsts,
+                       data = pumpData, inits = pumpInits,
+                       nchains = 2, niter = 10000,
+                       summary = TRUE, WAIC = TRUE,
+                       monitors = c('alpha','beta','theta'))
+```
+
+```{r}
+# attributes associated with mcmc.out
+# note: WAIC = Watanabe-Akaike information criteria
+names(mcmc.out)
+```
+
+```{r}
+# has two attributes - chain1 and chain 2
+mcmc.out$samples
+
+# to access only one chain
+mcmc.out$samples$chain1
+```
+
+```{r}
+mcmc.out$summary
+mcmc.out$WAIC 
+```
+
+* At this point we have initial values for all of the nodes in the model, and we have both the original and compiled versions of the model.
+
+```{r}
+# using NIMBLE’s default MCMC
+pumpConf <- configureMCMC(pump, print = TRUE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### References
+1. (NIMBLE user manual)[https://r-nimble.org/html_manual/cha-welcome-nimble.html], NIMBLE version 1.2.1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
