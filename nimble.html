@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Nimble</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="nimble_files/libs/clipboard/clipboard.min.js"></script>
+<script src="nimble_files/libs/quarto-html/quarto.js"></script>
+<script src="nimble_files/libs/quarto-html/popper.min.js"></script>
+<script src="nimble_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="nimble_files/libs/quarto-html/anchor.min.js"></script>
+<link href="nimble_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="nimble_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="nimble_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="nimble_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="nimble_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Nimble</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<ul>
+<li><p>NIMBLE is a system for building and sharing analysis methods for statistical models from R, especially for hierarchical models and computationally-intensive methods.</p></li>
+<li><p>Minble uses a compiler that generates C++ for your models and algorithms, compiles that C++, and lets you use it seamlessly from R without knowing anything about C++.</p></li>
+<li><p>NIMBLE stands for Numerical Inference for statistical Models for Bayesian and Likelihood Estimation.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nimble)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>nimble version 1.2.1 is loaded.
+For more information on NIMBLE and a User Manual,
+please visit https://R-nimble.org.
+
+Note for advanced users who have written their own MCMC samplers:
+  As of version 0.13.0, NIMBLE's protocol for handling posterior
+  predictive nodes has changed in a way that could affect user-defined
+  samplers in some situations. Please see Section 15.5.1 of the User Manual.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'nimble'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:stats':
+
+    simulate</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:base':
+
+    declare</code></pre>
+</div>
+</div>
+<p><strong>Model:</strong> <span class="math display">\[
+X_i | \theta_i \sim Pois(\theta_i \cdot t_i )
+\]</span></p>
+<p><span class="math display">\[
+\theta_i \cdot t_i | \alpha, \beta \sim Gamma(\alpha, \beta)
+\]</span></p>
+<p><span class="math display">\[
+\alpha \sim Exp(1) \mathrm{ and } \beta \sim Gamma(0.1,1)
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define the Bayesian model</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>pumpCode <span class="ot">&lt;-</span> <span class="fu">nimbleCode</span>({ </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N){</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      theta[i] <span class="sc">~</span> <span class="fu">dgamma</span>(alpha,beta)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      lambda[i] <span class="ot">&lt;-</span> theta[i]<span class="sc">*</span>t[i]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      x[i] <span class="sc">~</span> <span class="fu">dpois</span>(lambda[i])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  alpha <span class="sc">~</span> <span class="fu">dexp</span>(<span class="fl">1.0</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  beta <span class="sc">~</span> <span class="fu">dgamma</span>(<span class="fl">0.1</span>,<span class="fl">1.0</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># num. of sample points N = 10</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># t[i] = length of time duration for i-th pump</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>pumpConsts <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="dv">10</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">t =</span> <span class="fu">c</span>(<span class="fl">94.3</span>, <span class="fl">15.7</span>, <span class="fl">62.9</span>, <span class="dv">126</span>, <span class="fl">5.24</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                       <span class="fl">31.4</span>, <span class="fl">1.05</span>, <span class="fl">1.05</span>, <span class="fl">2.1</span>, <span class="fl">10.5</span>))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co"># x[i] = num. of pump failures recorded during time period t[i]</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>pumpData <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">14</span>, <span class="dv">3</span>, <span class="dv">19</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">22</span>))</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co"># initializing the MCMC chain for posterior f(theta, alpha, beta| x)</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>pumpInits <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">beta =</span> <span class="dv">1</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>                  <span class="at">theta =</span> <span class="fu">rep</span>(<span class="fl">0.1</span>, pumpConsts<span class="sc">$</span>N))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define the model</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>pump <span class="ot">&lt;-</span> <span class="fu">nimbleModel</span>(<span class="at">code =</span> pumpCode, <span class="at">name =</span> <span class="st">"pump"</span>, <span class="at">constants =</span> pumpConsts,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">data =</span> pumpData, <span class="at">inits =</span> pumpInits)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">getNodeNames</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "alpha"               "beta"                "lifted_d1_over_beta"
+ [4] "theta[1]"            "theta[2]"            "theta[3]"           
+ [7] "theta[4]"            "theta[5]"            "theta[6]"           
+[10] "theta[7]"            "theta[8]"            "theta[9]"           
+[13] "theta[10]"           "lambda[1]"           "lambda[2]"          
+[16] "lambda[3]"           "lambda[4]"           "lambda[5]"          
+[19] "lambda[6]"           "lambda[7]"           "lambda[8]"          
+[22] "lambda[9]"           "lambda[10]"          "x[1]"               
+[25] "x[2]"                "x[3]"                "x[4]"               
+[28] "x[5]"                "x[6]"                "x[7]"               
+[31] "x[8]"                "x[9]"                "x[10]"              </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># vector containing x values</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  5  1  5 14  3 19  1  1  4 22</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># computes log(Prob(X = x[i])) when X ~ Pois(t[i]*theta[i]) for i = 1, .. N</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># For eg, check log(dpois(x = 5,lambda = 0.1*94.3))</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>logProb_x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  -2.998011  -1.118924  -1.882686  -2.319466  -4.254550 -20.739651
+ [7]  -2.358795  -2.358795  -9.630645 -48.447798</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># initial chain values for alpha and beta</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>alpha ; pump<span class="sc">$</span>beta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># theta[i] = 0.1 for all i = 1,.. N</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>theta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># lambda[i] = theta[i]*t[i]</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>lambda</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  9.430  1.570  6.290 12.600  0.524  3.140  0.105  0.105  0.210  1.050</code></pre>
+</div>
+</div>
+<ul>
+<li>Notice that in the list of nodes, NIMBLE has introduced a new node, <code>lifted_d1_over_beta</code>. We call this a ‘lifted’ node. &gt; NIMBLE allows alternative parameterizations, such as the scale or rate parameterization of the gamma distribution. Choice of parameterization can generate a lifted node, as can using a link function or a distribution argument that is an expression. It’s helpful to know why they exist, but you shouldn’t need to worry about them.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>lifted_d1_over_beta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># gives the DAG representation of pump model</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">plotGraph</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="nimble_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># show all dependencies of alpha and beta terminating in stochastic nodes</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">getDependencies</span>(<span class="fu">c</span>(<span class="st">"alpha"</span>, <span class="st">"beta"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "alpha"               "beta"                "lifted_d1_over_beta"
+ [4] "theta[1]"            "theta[2]"            "theta[3]"           
+ [7] "theta[4]"            "theta[5]"            "theta[6]"           
+[10] "theta[7]"            "theta[8]"            "theta[9]"           
+[13] "theta[10]"          </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># now show only the deterministic dependencies</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">getDependencies</span>(<span class="fu">c</span>(<span class="st">"alpha"</span>, <span class="st">"beta"</span>), <span class="at">determOnly =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lifted_d1_over_beta"</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>You are in control of the model. By default, <code>nimbleModel</code> does its best to initialize a model, but let’s say you want to re-initialize <code>theta</code>. To simulate from the prior for <code>theta</code> (overwriting the initial values previously in the model) we first need to be sure the parent nodes of all <code>theta[i]</code> nodes are fully initialized, including any non-stochastic nodes such as lifted nodes. We then use the <code>simulate</code> function to simulate from the distribution for <code>theta</code>.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># use simulate to simulate new theta values</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">simulate</span>(<span class="st">"theta"</span>)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>theta   <span class="co"># the new theta values</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.15514136 1.88240160 1.80451250 0.83617765 1.22254365 1.15835525
+ [7] 0.99001994 0.30737332 0.09461909 0.15720154</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>Finally we use the <code>calculate</code> function to calculate the dependencies of <code>theta</code>, namely <code>lambda</code> and the log probabilities of <code>x</code> to ensure all parts of the model are up to date.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># notice that logprob_x and lambda aren't yet updated</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>lambda</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  9.430  1.570  6.290 12.600  0.524  3.140  0.105  0.105  0.210  1.050</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>logProb_x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  -2.998011  -1.118924  -1.882686  -2.319466  -4.254550 -20.739651
+ [7]  -2.358795  -2.358795  -9.630645 -48.447798</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># use calculate() to update values dependent on theta in the DAG</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co"># what is this output?</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span><span class="fu">calculate</span>(pump<span class="sc">$</span><span class="fu">getDependencies</span>(<span class="fu">c</span>(<span class="st">"theta"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -262.204</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># updated lambda and logprob_x</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>lambda</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  14.6298299  29.5537051 113.5038360 105.3583839   6.4061287  36.3723548
+ [7]   1.0395209   0.3227420   0.1987001   1.6506161</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>pump<span class="sc">$</span>logProb_x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1]  -6.002009 -26.167496 -94.632145 -65.346457  -2.626123  -7.429868
+ [7]  -1.000761  -1.453644  -9.840589 -39.096527</code></pre>
+</div>
+</div>
+<ul>
+<li><p>Next step is to compile the model, which means: generating C++ code, compiling that code, and loading it back into R with an object that can be used just like the uncompiled model.</p></li>
+<li><p>The values in the compiled model will be initialized from those of the original model in R, but the original and compiled models are distinct objects so any subsequent changes in one will not be reflected in the other.</p></li>
+<li><p>Note that the compiled model is used when running any NIMBLE algorithms via C++, so the model needs to be compiled before (or at the same time as) any compilation of algorithms, such as the compilation of the MCMC.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>Cpump <span class="ot">&lt;-</span> <span class="fu">compileNimble</span>(pump)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>Cpump<span class="sc">$</span>theta</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.15514136 1.88240160 1.80451250 0.83617765 1.22254365 1.15835525
+ [7] 0.99001994 0.30737332 0.09461909 0.15720154</code></pre>
+</div>
+</div>
+<p>The most direct approach to invoking NIMBLE’s MCMC engine is using the <code>nimbleMCMC</code> function. This function would generally take the code, data, constants, and initial values as input, but it can also accept the (compiled or uncompiled) model object as an argument. It provides a variety of options for executing and controlling multiple chains of NIMBLE’s default MCMC algorithm, and returning posterior samples, posterior summary statistics, and/or WAIC values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># to execute two MCMC chains of 10 samples each, and return samples, summary statistics, and WAIC values</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>mcmc.out <span class="ot">&lt;-</span> <span class="fu">nimbleMCMC</span>(<span class="at">code =</span> pumpCode, <span class="at">constants =</span> pumpConsts,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">data =</span> pumpData, <span class="at">inits =</span> pumpInits,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">nchains =</span> <span class="dv">2</span>, <span class="at">niter =</span> <span class="dv">50</span>,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">summary =</span> <span class="cn">TRUE</span>, <span class="at">WAIC =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">monitors =</span> <span class="fu">c</span>(<span class="st">'alpha'</span>,<span class="st">'beta'</span>,<span class="st">'theta'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model calculations</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 1...</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 2...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [Warning] There are 6 individual pWAIC values that are greater than 0.4. This may indicate that the WAIC estimate is unstable (Vehtari et al., 2017), at least in cases without grouping of data nodes or multivariate data nodes.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># attributes associated with mcmc.out</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="co"># note: WAIC = Watanabe-Akaike information criteria</span></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(mcmc.out)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "samples" "summary" "WAIC"   </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co"># has two attributes - chain1 and chain 2</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>mcmc.out<span class="sc">$</span>samples</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chain1
+          alpha      beta   theta[1]    theta[2]   theta[3]   theta[4]
+ [1,] 0.7007849 2.7961826 0.05318364 0.093298336 0.04203327 0.13878503
+ [2,] 0.7007849 1.0443905 0.04011881 0.009906107 0.12056609 0.09940093
+ [3,] 0.7007849 1.4030182 0.07597841 0.056399223 0.09561443 0.09409568
+ [4,] 0.5849596 0.4913962 0.02509837 0.194452944 0.08575951 0.18514158
+ [5,] 0.6593009 0.6172908 0.05116900 0.057300771 0.10385501 0.12194123
+ [6,] 0.6593009 0.7039765 0.04776931 0.038052940 0.12060779 0.13617704
+ [7,] 0.6593009 0.5842528 0.04388500 0.073019778 0.03227055 0.10048473
+ [8,] 0.6593009 1.2424810 0.09547926 0.086134912 0.04270008 0.10189519
+ [9,] 0.6024041 0.3865607 0.04644063 0.041614455 0.05554823 0.18221432
+[10,] 0.3502209 0.2081008 0.03786432 0.033926491 0.09240662 0.10281680
+[11,] 0.3502209 0.3677269 0.04945501 0.092870219 0.03279842 0.17923951
+[12,] 0.3502209 0.4662223 0.03192118 0.062225173 0.16308865 0.08978806
+[13,] 0.3502209 0.6569390 0.09358349 0.033421471 0.09622327 0.10895888
+[14,] 0.3502209 0.6588130 0.05004545 0.025922035 0.05603340 0.16056602
+[15,] 0.3502209 0.4955391 0.02731329 0.043721732 0.10305171 0.14202943
+[16,] 0.4864428 0.8165537 0.05080203 0.138132670 0.08115319 0.10786856
+[17,] 0.4864428 2.2145675 0.04584799 0.033225548 0.19437501 0.11368433
+[18,] 0.9999366 1.8071739 0.10702381 0.071861472 0.12270545 0.12674129
+[19,] 0.7308955 1.4383688 0.05663736 0.113233520 0.04896083 0.06986063
+[20,] 0.7308955 1.1197664 0.04307425 0.136786001 0.02856150 0.16347462
+[21,] 0.9531136 0.9941400 0.05859950 0.092020680 0.07812440 0.09850455
+[22,] 1.1023343 2.6133473 0.09940821 0.140570513 0.09979295 0.10788061
+[23,] 1.1023343 1.9262000 0.06123582 0.491974875 0.09686586 0.09088412
+[24,] 1.1023343 1.0374749 0.09093092 0.091506414 0.21385027 0.10958689
+[25,] 1.1473449 1.6029756 0.04961835 0.287740939 0.06674537 0.16839610
+[26,] 1.1473449 1.0888525 0.07527053 0.227432403 0.11905073 0.12116052
+[27,] 1.1473449 1.1324020 0.07461450 0.050515192 0.10776705 0.07371426
+[28,] 1.1473449 1.8409663 0.06392093 0.455775910 0.08072717 0.09441643
+[29,] 1.1473449 1.6307363 0.06479537 0.204039578 0.08648924 0.11044218
+[30,] 1.1473449 0.9912576 0.03923582 0.067442065 0.05195602 0.09164958
+[31,] 1.1473449 2.4315543 0.09335003 0.056956184 0.12766373 0.13648946
+[32,] 1.1514469 1.9490577 0.05754393 0.100050776 0.14219340 0.08703694
+[33,] 1.1514469 0.9401995 0.04935436 0.008019031 0.08921915 0.15859971
+[34,] 1.1514469 1.7034434 0.04710790 0.158777151 0.12084243 0.14550340
+[35,] 1.1514469 1.0543256 0.04818337 0.472832848 0.07263535 0.17140515
+[36,] 1.1514469 1.7571916 0.02747581 0.044058609 0.16107836 0.13479476
+[37,] 1.1514469 2.5772919 0.06390338 0.102281832 0.09881052 0.10277145
+[38,] 1.1514469 3.1476333 0.07603781 0.028640605 0.13882579 0.08819328
+[39,] 1.6166618 3.5905987 0.10501812 0.128887643 0.11773457 0.09820730
+[40,] 1.6166618 2.2813227 0.07705528 0.046308271 0.08854538 0.14928862
+[41,] 1.6166618 1.6029186 0.03174656 0.155599632 0.06210149 0.09718175
+[42,] 1.6166618 3.6257021 0.06838724 0.136352357 0.06945680 0.09504708
+[43,] 1.3059209 2.0288271 0.03808044 0.019123412 0.09324708 0.10716715
+[44,] 1.0141962 1.1910098 0.08783906 0.128838180 0.05986501 0.09560642
+[45,] 1.0141962 0.9326172 0.03423100 0.172341083 0.07923302 0.10799222
+[46,] 1.0141962 1.1327646 0.13097337 0.070264852 0.06348652 0.14856592
+[47,] 1.1547431 1.0775976 0.01090839 0.182700765 0.14889220 0.11343952
+[48,] 1.1547431 1.3384439 0.06943959 0.088876328 0.05173999 0.11248479
+[49,] 1.1547431 1.1498472 0.08663335 0.097301755 0.05118339 0.10278728
+[50,] 1.1547431 1.7319483 0.12617701 0.074142426 0.09049700 0.12030085
+       theta[5]  theta[6]   theta[7]   theta[8]  theta[9] theta[10]
+ [1,] 0.5914523 0.5710845 0.79084001 0.69817234 0.5931096  1.504568
+ [2,] 0.8706215 0.6993668 0.49048465 0.36090502 1.7234437  1.652242
+ [3,] 0.2914346 0.7924118 1.77390027 0.33921285 1.4713925  1.849638
+ [4,] 0.6938404 0.5051353 0.62565484 0.11162395 1.6904816  1.959264
+ [5,] 0.9102237 0.5575418 1.17563626 1.78753124 0.9454214  2.514855
+ [6,] 0.3246094 0.4790534 0.14917422 2.19100988 2.0504443  2.378703
+ [7,] 0.6496972 0.6686507 0.80324660 0.63327068 2.7379245  1.909078
+ [8,] 0.3656543 0.6603773 0.04397569 0.15640175 1.0675082  1.554530
+ [9,] 0.5568446 0.4371062 2.21815948 0.10819478 1.4009181  2.433076
+[10,] 1.1733999 0.7082636 1.29962539 0.33647836 0.6769101  1.624209
+[11,] 0.8646302 0.7699430 0.06622478 0.27637755 0.6116526  1.971842
+[12,] 0.2060083 0.4554372 0.11312369 0.30197809 1.8297133  2.777420
+[13,] 0.7848230 0.5930365 0.08863873 0.03289803 2.3554083  1.395321
+[14,] 0.1531534 0.5439990 0.74110084 2.42751468 0.5262782  2.727677
+[15,] 0.5648989 0.4774392 0.08785688 0.27309738 1.4076563  2.444686
+[16,] 0.6700544 0.6411099 0.32642020 0.86192313 0.7005890  2.314362
+[17,] 0.7054646 0.3070682 0.21806972 0.64679317 1.1173726  1.582207
+[18,] 0.7993256 0.5364886 0.90887352 0.97792398 0.6532869  2.659990
+[19,] 0.5108194 0.5265465 0.66033296 1.41928256 1.0118386  1.814653
+[20,] 0.8326246 0.5550983 0.21150851 1.27946285 1.9034459  2.042947
+[21,] 0.8057844 0.6058252 0.71953159 0.60524037 0.6387286  2.057522
+[22,] 0.6039942 0.5665986 0.38526868 0.14955616 0.1529786  1.926349
+[23,] 0.7944785 0.6503375 1.22965944 0.16427857 1.0574269  1.769666
+[24,] 0.3547999 0.6832509 0.72631331 0.96477648 1.3925351  1.364689
+[25,] 0.1408377 0.5470975 0.67853946 1.47120025 1.6115866  1.925275
+[26,] 0.9718705 0.6066342 0.24972356 0.73164925 1.7182810  1.800980
+[27,] 0.6770479 0.4251325 1.37057608 0.73978362 1.3626800  1.773479
+[28,] 0.7146166 0.5786485 0.26596511 0.47448330 1.4327443  2.393080
+[29,] 0.3967704 0.7731883 0.94729604 0.66327472 2.5092329  1.324052
+[30,] 0.6967310 0.4929484 1.13805072 2.22494869 0.5260077  2.402880
+[31,] 0.3368137 0.6114663 0.33026458 0.21047982 1.6698499  1.490492
+[32,] 0.5467066 0.4414313 0.21042658 0.37408534 1.0989902  1.937356
+[33,] 0.5706504 0.5377586 2.42637383 0.24956545 1.2626010  1.859049
+[34,] 0.9422446 0.5754923 1.22079110 0.48981971 0.7538534  2.223932
+[35,] 0.7378280 0.7314778 0.69880697 0.15072764 1.0001792  1.798607
+[36,] 0.1626991 0.8105634 0.85499871 0.86267802 1.1307062  2.101388
+[37,] 0.3779214 0.5244128 0.01624103 0.37165797 1.2540921  1.733908
+[38,] 0.8011188 0.4221758 0.59636178 0.31501943 0.3578171  1.559520
+[39,] 0.4578550 0.7501122 0.44131378 0.36029359 1.7275216  1.728436
+[40,] 0.3434726 0.4201290 0.50235437 0.63090944 1.2049259  2.726142
+[41,] 0.2801726 0.7648243 0.27580515 0.55447683 0.8074406  1.472451
+[42,] 0.4793422 0.4902721 0.65127021 0.67946031 0.7773794  1.768143
+[43,] 1.0291275 0.7776933 0.48743927 0.58824502 1.6672694  2.213076
+[44,] 0.2990714 0.5047214 1.23320653 0.97914885 1.1521912  1.872226
+[45,] 0.6612356 0.7666272 0.27579253 0.34299549 2.4333809  1.932688
+[46,] 1.2743480 0.7379392 1.40260288 2.04926867 1.0459555  2.493759
+[47,] 0.2501121 0.6243468 0.56173994 1.24897972 2.0089835  1.317496
+[48,] 0.8532173 0.6407769 0.61349885 0.24931641 0.7618095  1.012209
+[49,] 0.9827064 0.5425444 0.97305231 1.23724853 1.9102897  1.080276
+[50,] 0.5707858 0.4355046 0.88542402 0.73663522 0.8928719  2.618785
+
+$chain2
+          alpha      beta   theta[1]    theta[2]   theta[3]   theta[4]
+ [1,] 1.0000000 4.9602219 0.04101822 0.265689784 0.09183164 0.08248274
+ [2,] 1.0000000 0.7486293 0.02556269 0.146913968 0.14715969 0.09737130
+ [3,] 1.0000000 1.7360632 0.05590909 0.141882468 0.08601668 0.06278724
+ [4,] 1.3201767 2.0568290 0.05997686 0.097812918 0.10501751 0.10800289
+ [5,] 1.3201767 2.4057630 0.06687440 0.098709690 0.07074476 0.10456209
+ [6,] 1.3201767 2.3882913 0.06549310 0.114342732 0.08312574 0.09681800
+ [7,] 1.3201767 1.0350700 0.03822495 0.223159267 0.18374334 0.13231176
+ [8,] 0.6427116 0.7236754 0.07709375 0.046389562 0.08942988 0.08560693
+ [9,] 0.5082621 0.6252299 0.06283735 0.036403292 0.03696117 0.11003869
+[10,] 0.5082621 0.9688391 0.03225455 0.037866887 0.05570924 0.14632096
+[11,] 0.5082621 1.1639063 0.01217142 0.004603949 0.07071134 0.09343951
+[12,] 0.5082621 0.7975813 0.03174636 0.032955685 0.20120084 0.11735451
+[13,] 0.5938408 1.0106261 0.11378883 0.075307008 0.08119262 0.11766800
+[14,] 0.5938408 0.3733473 0.03692841 0.123883565 0.10969895 0.13618154
+[15,] 0.5938408 1.8896584 0.04937511 0.116566831 0.07379159 0.13137040
+[16,] 1.3050547 2.7719092 0.09086243 0.049914316 0.04628299 0.08361516
+[17,] 1.3788852 1.3377929 0.07607471 0.026290037 0.05907301 0.10316378
+[18,] 0.6101851 1.8231038 0.09562129 0.018713658 0.07925971 0.13589304
+[19,] 0.6101851 1.4266178 0.05081878 0.038266422 0.08232462 0.11149048
+[20,] 0.6101851 0.9481146 0.03813637 0.081691919 0.03162240 0.14101610
+[21,] 0.6101851 0.3872103 0.05069651 0.199853170 0.08615220 0.17197240
+[22,] 0.6101851 0.5405251 0.02218144 0.184292304 0.06516342 0.15689338
+[23,] 0.6101851 0.7860722 0.09357812 0.046838672 0.08608349 0.10967702
+[24,] 0.6101851 0.8993130 0.05653795 0.100994966 0.07010800 0.09921114
+[25,] 0.6101851 0.7858019 0.08117500 0.289267860 0.13369161 0.08700742
+[26,] 0.6101851 0.9236049 0.03655359 0.023509411 0.06025441 0.13275058
+[27,] 0.4993593 0.5684241 0.11528410 0.256954851 0.08486447 0.10744099
+[28,] 0.4993593 0.5105320 0.04266939 0.039162048 0.09067347 0.08863672
+[29,] 0.4993593 1.4572037 0.05805770 0.070219466 0.07714317 0.15714369
+[30,] 0.4993593 1.3256672 0.03471763 0.172895014 0.08772767 0.10136279
+[31,] 0.4993593 0.9398344 0.05410460 0.102640991 0.04184274 0.09163085
+[32,] 0.4993593 0.3535394 0.08070984 0.078338281 0.12333604 0.10853987
+[33,] 0.4993593 0.3668801 0.02879440 0.008765454 0.10789004 0.13562673
+[34,] 0.4993593 1.2515042 0.03581586 0.017345770 0.15109319 0.06400452
+[35,] 0.4993593 1.3339212 0.06480342 0.053371152 0.15700958 0.17816440
+[36,] 1.2411778 1.6563066 0.12667879 0.094360262 0.08729455 0.12034943
+[37,] 1.2411778 1.2247038 0.05340434 0.253991739 0.14087444 0.11942494
+[38,] 1.5606941 1.3077317 0.07969057 0.154044663 0.09799742 0.13713848
+[39,] 1.6928658 1.3785926 0.07590320 0.095786988 0.04370275 0.16381885
+[40,] 0.7518561 1.1675646 0.05073037 0.142806081 0.10221906 0.07450317
+[41,] 0.7518561 0.9354435 0.06413090 0.284666113 0.04655015 0.16529794
+[42,] 0.7518561 0.9722313 0.08978579 0.082413872 0.04996786 0.10234383
+[43,] 0.7518561 0.6589596 0.02244870 0.065366951 0.15377143 0.14232817
+[44,] 0.7518561 0.5746396 0.05247909 0.112578892 0.07385363 0.09072616
+[45,] 0.7518561 1.1162300 0.07319484 0.055118355 0.13090939 0.07226613
+[46,] 0.7518561 1.0331911 0.05090781 0.052567768 0.10888056 0.12207084
+[47,] 0.7518561 0.8142511 0.05189763 0.054229439 0.07080408 0.11929817
+[48,] 0.7518561 1.4975779 0.08335671 0.042700440 0.18019395 0.12571426
+[49,] 0.7518561 1.0874387 0.06336933 0.061151629 0.10319212 0.13686027
+[50,] 0.7518561 2.0353319 0.05799542 0.123281857 0.10066539 0.12187422
+       theta[5]  theta[6]   theta[7]   theta[8]  theta[9] theta[10]
+ [1,] 0.1626318 0.3143111 0.52922098 0.65673011 1.3439411  1.517413
+ [2,] 0.3696669 0.8167194 0.16151978 1.46414352 2.3996772  1.679229
+ [3,] 0.5980406 0.5083807 1.22700749 0.43525722 1.2726640  2.211001
+ [4,] 0.2992201 0.4228004 0.70723518 0.68640650 1.0179385  1.384265
+ [5,] 0.5695282 0.4482217 0.40225300 0.81549806 1.1888041  2.042885
+ [6,] 0.7583631 0.5577081 1.56665351 0.85817386 2.5095943  1.902298
+ [7,] 0.1734111 0.5877119 0.74890419 2.84061543 1.5786599  1.457003
+ [8,] 0.4460568 0.9420771 0.38109102 0.55469288 1.3844337  1.764366
+ [9,] 0.3592923 0.4081654 0.47309104 1.20190099 1.9104072  1.773925
+[10,] 0.8449136 0.4758085 0.03546296 0.01479028 1.4745955  1.812324
+[11,] 0.3229355 0.8881548 0.31937910 0.99594752 1.4155481  1.416780
+[12,] 0.5274728 0.3197461 0.42669273 0.93348464 0.7901455  2.039545
+[13,] 0.2514567 0.5186263 0.41098511 1.10288435 0.7902624  1.761764
+[14,] 0.4491841 0.6236448 1.52568491 0.28408532 0.7828506  2.842931
+[15,] 0.3540950 0.4947102 0.43001801 0.19646981 1.1113071  2.523168
+[16,] 0.4400561 0.6037263 0.62533889 0.18747076 1.2200075  1.437874
+[17,] 0.3825989 0.5937349 0.58186293 0.50070483 1.9156792  2.226769
+[18,] 1.0292337 0.6486386 0.10855052 1.04990999 0.7238998  2.325315
+[19,] 0.4282262 0.3593188 0.60327920 0.23502677 1.0327163  1.693061
+[20,] 0.6600492 0.5591219 0.84834901 1.64702058 2.0857101  2.477075
+[21,] 0.4710172 0.5446420 1.93580184 0.18025688 1.4108201  1.854299
+[22,] 0.1621987 0.6729879 0.81214871 0.79606423 1.1260167  2.583898
+[23,] 0.2375692 0.5017518 0.37822876 0.56371127 1.0759916  2.129909
+[24,] 1.4260313 0.4103560 0.68444908 0.80744044 0.9237674  1.876880
+[25,] 0.5371259 0.8439070 0.13357826 0.08607100 1.3756674  1.591338
+[26,] 1.1082281 0.4663763 0.14169919 0.73836799 1.8102167  1.960814
+[27,] 0.3425603 0.8128098 0.89517782 1.49755883 1.4785488  2.181179
+[28,] 0.2725744 0.6049884 0.14714918 0.18580493 0.7057053  2.257474
+[29,] 0.2869736 0.4142773 0.87581173 0.12368179 1.0916982  1.366387
+[30,] 0.3220146 0.4756015 1.09830321 0.08261201 1.7872370  1.696426
+[31,] 0.2807367 0.8877827 0.21293810 0.90188383 1.7080907  1.522316
+[32,] 0.5592126 0.4004869 0.10816284 1.64404350 2.2193219  1.500490
+[33,] 0.3261709 0.6135332 0.16258481 0.86816940 2.6822606  1.971468
+[34,] 0.3011464 0.4524493 0.24607337 1.46236708 0.9690586  1.901291
+[35,] 0.8733835 0.5515357 1.19263620 0.22013670 0.7787672  2.260717
+[36,] 1.0187594 0.5632613 1.16119896 2.48331081 1.4458481  1.653983
+[37,] 0.6068692 0.7268775 0.62642029 0.61883461 1.7431049  3.251915
+[38,] 0.4848286 0.5353250 1.03757073 1.65759322 2.4442633  2.281647
+[39,] 0.6693871 0.5634359 0.55529197 0.43249668 1.4593115  2.331579
+[40,] 0.1273712 0.4609060 0.67240026 0.55747984 0.9613200  2.311148
+[41,] 0.4590091 0.5634308 1.47681426 0.54446529 1.7247148  2.357537
+[42,] 0.2307130 0.6381110 1.14197424 0.91718144 2.7844122  1.981975
+[43,] 1.1589537 0.7286675 0.42611708 0.54243297 1.6907611  2.604900
+[44,] 0.9817554 0.3686585 0.72540377 1.76845893 0.5344699  2.374085
+[45,] 0.8645212 0.7745360 1.07777707 0.87708451 0.9573838  1.920752
+[46,] 0.6423074 0.7008299 1.79093212 0.64492218 1.4175941  2.077433
+[47,] 1.1366624 0.8316887 0.66669475 1.36720851 1.6887286  2.009048
+[48,] 0.4731064 0.3445550 0.12675505 1.57584180 2.0781494  1.986033
+[49,] 0.7377828 0.5187231 0.52229405 0.35611661 0.4339100  1.273605
+[50,] 0.3655796 0.6147843 1.46162738 0.46668055 1.0322629  1.613878</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co"># to access only one chain</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>mcmc.out<span class="sc">$</span>samples<span class="sc">$</span>chain1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          alpha      beta   theta[1]    theta[2]   theta[3]   theta[4]
+ [1,] 0.7007849 2.7961826 0.05318364 0.093298336 0.04203327 0.13878503
+ [2,] 0.7007849 1.0443905 0.04011881 0.009906107 0.12056609 0.09940093
+ [3,] 0.7007849 1.4030182 0.07597841 0.056399223 0.09561443 0.09409568
+ [4,] 0.5849596 0.4913962 0.02509837 0.194452944 0.08575951 0.18514158
+ [5,] 0.6593009 0.6172908 0.05116900 0.057300771 0.10385501 0.12194123
+ [6,] 0.6593009 0.7039765 0.04776931 0.038052940 0.12060779 0.13617704
+ [7,] 0.6593009 0.5842528 0.04388500 0.073019778 0.03227055 0.10048473
+ [8,] 0.6593009 1.2424810 0.09547926 0.086134912 0.04270008 0.10189519
+ [9,] 0.6024041 0.3865607 0.04644063 0.041614455 0.05554823 0.18221432
+[10,] 0.3502209 0.2081008 0.03786432 0.033926491 0.09240662 0.10281680
+[11,] 0.3502209 0.3677269 0.04945501 0.092870219 0.03279842 0.17923951
+[12,] 0.3502209 0.4662223 0.03192118 0.062225173 0.16308865 0.08978806
+[13,] 0.3502209 0.6569390 0.09358349 0.033421471 0.09622327 0.10895888
+[14,] 0.3502209 0.6588130 0.05004545 0.025922035 0.05603340 0.16056602
+[15,] 0.3502209 0.4955391 0.02731329 0.043721732 0.10305171 0.14202943
+[16,] 0.4864428 0.8165537 0.05080203 0.138132670 0.08115319 0.10786856
+[17,] 0.4864428 2.2145675 0.04584799 0.033225548 0.19437501 0.11368433
+[18,] 0.9999366 1.8071739 0.10702381 0.071861472 0.12270545 0.12674129
+[19,] 0.7308955 1.4383688 0.05663736 0.113233520 0.04896083 0.06986063
+[20,] 0.7308955 1.1197664 0.04307425 0.136786001 0.02856150 0.16347462
+[21,] 0.9531136 0.9941400 0.05859950 0.092020680 0.07812440 0.09850455
+[22,] 1.1023343 2.6133473 0.09940821 0.140570513 0.09979295 0.10788061
+[23,] 1.1023343 1.9262000 0.06123582 0.491974875 0.09686586 0.09088412
+[24,] 1.1023343 1.0374749 0.09093092 0.091506414 0.21385027 0.10958689
+[25,] 1.1473449 1.6029756 0.04961835 0.287740939 0.06674537 0.16839610
+[26,] 1.1473449 1.0888525 0.07527053 0.227432403 0.11905073 0.12116052
+[27,] 1.1473449 1.1324020 0.07461450 0.050515192 0.10776705 0.07371426
+[28,] 1.1473449 1.8409663 0.06392093 0.455775910 0.08072717 0.09441643
+[29,] 1.1473449 1.6307363 0.06479537 0.204039578 0.08648924 0.11044218
+[30,] 1.1473449 0.9912576 0.03923582 0.067442065 0.05195602 0.09164958
+[31,] 1.1473449 2.4315543 0.09335003 0.056956184 0.12766373 0.13648946
+[32,] 1.1514469 1.9490577 0.05754393 0.100050776 0.14219340 0.08703694
+[33,] 1.1514469 0.9401995 0.04935436 0.008019031 0.08921915 0.15859971
+[34,] 1.1514469 1.7034434 0.04710790 0.158777151 0.12084243 0.14550340
+[35,] 1.1514469 1.0543256 0.04818337 0.472832848 0.07263535 0.17140515
+[36,] 1.1514469 1.7571916 0.02747581 0.044058609 0.16107836 0.13479476
+[37,] 1.1514469 2.5772919 0.06390338 0.102281832 0.09881052 0.10277145
+[38,] 1.1514469 3.1476333 0.07603781 0.028640605 0.13882579 0.08819328
+[39,] 1.6166618 3.5905987 0.10501812 0.128887643 0.11773457 0.09820730
+[40,] 1.6166618 2.2813227 0.07705528 0.046308271 0.08854538 0.14928862
+[41,] 1.6166618 1.6029186 0.03174656 0.155599632 0.06210149 0.09718175
+[42,] 1.6166618 3.6257021 0.06838724 0.136352357 0.06945680 0.09504708
+[43,] 1.3059209 2.0288271 0.03808044 0.019123412 0.09324708 0.10716715
+[44,] 1.0141962 1.1910098 0.08783906 0.128838180 0.05986501 0.09560642
+[45,] 1.0141962 0.9326172 0.03423100 0.172341083 0.07923302 0.10799222
+[46,] 1.0141962 1.1327646 0.13097337 0.070264852 0.06348652 0.14856592
+[47,] 1.1547431 1.0775976 0.01090839 0.182700765 0.14889220 0.11343952
+[48,] 1.1547431 1.3384439 0.06943959 0.088876328 0.05173999 0.11248479
+[49,] 1.1547431 1.1498472 0.08663335 0.097301755 0.05118339 0.10278728
+[50,] 1.1547431 1.7319483 0.12617701 0.074142426 0.09049700 0.12030085
+       theta[5]  theta[6]   theta[7]   theta[8]  theta[9] theta[10]
+ [1,] 0.5914523 0.5710845 0.79084001 0.69817234 0.5931096  1.504568
+ [2,] 0.8706215 0.6993668 0.49048465 0.36090502 1.7234437  1.652242
+ [3,] 0.2914346 0.7924118 1.77390027 0.33921285 1.4713925  1.849638
+ [4,] 0.6938404 0.5051353 0.62565484 0.11162395 1.6904816  1.959264
+ [5,] 0.9102237 0.5575418 1.17563626 1.78753124 0.9454214  2.514855
+ [6,] 0.3246094 0.4790534 0.14917422 2.19100988 2.0504443  2.378703
+ [7,] 0.6496972 0.6686507 0.80324660 0.63327068 2.7379245  1.909078
+ [8,] 0.3656543 0.6603773 0.04397569 0.15640175 1.0675082  1.554530
+ [9,] 0.5568446 0.4371062 2.21815948 0.10819478 1.4009181  2.433076
+[10,] 1.1733999 0.7082636 1.29962539 0.33647836 0.6769101  1.624209
+[11,] 0.8646302 0.7699430 0.06622478 0.27637755 0.6116526  1.971842
+[12,] 0.2060083 0.4554372 0.11312369 0.30197809 1.8297133  2.777420
+[13,] 0.7848230 0.5930365 0.08863873 0.03289803 2.3554083  1.395321
+[14,] 0.1531534 0.5439990 0.74110084 2.42751468 0.5262782  2.727677
+[15,] 0.5648989 0.4774392 0.08785688 0.27309738 1.4076563  2.444686
+[16,] 0.6700544 0.6411099 0.32642020 0.86192313 0.7005890  2.314362
+[17,] 0.7054646 0.3070682 0.21806972 0.64679317 1.1173726  1.582207
+[18,] 0.7993256 0.5364886 0.90887352 0.97792398 0.6532869  2.659990
+[19,] 0.5108194 0.5265465 0.66033296 1.41928256 1.0118386  1.814653
+[20,] 0.8326246 0.5550983 0.21150851 1.27946285 1.9034459  2.042947
+[21,] 0.8057844 0.6058252 0.71953159 0.60524037 0.6387286  2.057522
+[22,] 0.6039942 0.5665986 0.38526868 0.14955616 0.1529786  1.926349
+[23,] 0.7944785 0.6503375 1.22965944 0.16427857 1.0574269  1.769666
+[24,] 0.3547999 0.6832509 0.72631331 0.96477648 1.3925351  1.364689
+[25,] 0.1408377 0.5470975 0.67853946 1.47120025 1.6115866  1.925275
+[26,] 0.9718705 0.6066342 0.24972356 0.73164925 1.7182810  1.800980
+[27,] 0.6770479 0.4251325 1.37057608 0.73978362 1.3626800  1.773479
+[28,] 0.7146166 0.5786485 0.26596511 0.47448330 1.4327443  2.393080
+[29,] 0.3967704 0.7731883 0.94729604 0.66327472 2.5092329  1.324052
+[30,] 0.6967310 0.4929484 1.13805072 2.22494869 0.5260077  2.402880
+[31,] 0.3368137 0.6114663 0.33026458 0.21047982 1.6698499  1.490492
+[32,] 0.5467066 0.4414313 0.21042658 0.37408534 1.0989902  1.937356
+[33,] 0.5706504 0.5377586 2.42637383 0.24956545 1.2626010  1.859049
+[34,] 0.9422446 0.5754923 1.22079110 0.48981971 0.7538534  2.223932
+[35,] 0.7378280 0.7314778 0.69880697 0.15072764 1.0001792  1.798607
+[36,] 0.1626991 0.8105634 0.85499871 0.86267802 1.1307062  2.101388
+[37,] 0.3779214 0.5244128 0.01624103 0.37165797 1.2540921  1.733908
+[38,] 0.8011188 0.4221758 0.59636178 0.31501943 0.3578171  1.559520
+[39,] 0.4578550 0.7501122 0.44131378 0.36029359 1.7275216  1.728436
+[40,] 0.3434726 0.4201290 0.50235437 0.63090944 1.2049259  2.726142
+[41,] 0.2801726 0.7648243 0.27580515 0.55447683 0.8074406  1.472451
+[42,] 0.4793422 0.4902721 0.65127021 0.67946031 0.7773794  1.768143
+[43,] 1.0291275 0.7776933 0.48743927 0.58824502 1.6672694  2.213076
+[44,] 0.2990714 0.5047214 1.23320653 0.97914885 1.1521912  1.872226
+[45,] 0.6612356 0.7666272 0.27579253 0.34299549 2.4333809  1.932688
+[46,] 1.2743480 0.7379392 1.40260288 2.04926867 1.0459555  2.493759
+[47,] 0.2501121 0.6243468 0.56173994 1.24897972 2.0089835  1.317496
+[48,] 0.8532173 0.6407769 0.61349885 0.24931641 0.7618095  1.012209
+[49,] 0.9827064 0.5425444 0.97305231 1.23724853 1.9102897  1.080276
+[50,] 0.5707858 0.4355046 0.88542402 0.73663522 0.8928719  2.618785</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>mcmc.out<span class="sc">$</span>summary</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$chain1
+                Mean     Median    St.Dev.  95%CI_low 95%CI_upp
+alpha     0.94497299 1.10233435 0.35498295 0.35022094 1.6166618
+beta      1.43243936 1.17042849 0.81811632 0.37196454 3.4909314
+theta[1]  0.06159533 0.05491050 0.02646999 0.02559673 0.1218675
+theta[2]  0.11633756 0.09019137 0.10887849 0.01198000 0.4689950
+theta[3]  0.09293867 0.08985808 0.04044376 0.03238932 0.1873356
+theta[4]  0.11929324 0.10927288 0.02926977 0.07671187 0.1815450
+theta[5]  0.61267881 0.62684569 0.27205689 0.15530120 1.1409386
+theta[6]  0.59050178 0.57328841 0.12045856 0.42058956 0.7891001
+theta[7]  0.70323071 0.63846253 0.53508595 0.04898174 2.1182012
+theta[8]  0.72180510 0.59674269 0.59693857 0.10896634 2.2173125
+theta[9]  1.27590211 1.17855855 0.58869976 0.39566000 2.4921662
+theta[10] 1.93578345 1.89065219 0.43961947 1.13365036 2.7273313
+
+$chain2
+                Mean     Median    St.Dev.  95%CI_low 95%CI_upp
+alpha     0.78828323 0.62644837 0.32597469 0.49935933 1.5197871
+beta      1.22162995 1.03413054 0.77325104 0.36833520 2.6895263
+theta[1]  0.05944843 0.05622352 0.02515484 0.02224157 0.1149477
+theta[2]  0.10193757 0.08205290 0.07573077 0.01069603 0.2803964
+theta[3]  0.09397616 0.08611784 0.03923524 0.03805952 0.1829447
+theta[4]  0.11603145 0.11442250 0.02783373 0.06586338 0.1704706
+theta[5]  0.53781965 0.45409659 0.30387711 0.16229612 1.1539382
+theta[6]  0.57357207 0.55841502 0.15809206 0.32532812 0.8880711
+theta[7]  0.69213189 0.61430904 0.47651123 0.10825007 1.7404694
+theta[8]  0.83258982 0.71238724 0.61170879 0.08339028 2.3224691
+theta[9]  1.42976490 1.39762690 0.56467852 0.57299784 2.6434107
+theta[10] 1.97946793 1.96614076 0.41335611 1.37040977 2.7893739
+
+$all.chains
+                Mean     Median    St.Dev.   95%CI_low 95%CI_upp
+alpha     0.86662811 0.75185607 0.34808479 0.350220945 1.6166618
+beta      1.32703466 1.12608420 0.79902313 0.367282327 3.3801901
+theta[1]  0.06052188 0.05622352 0.02571270 0.022308388 0.1210029
+theta[2]  0.10913757 0.08750562 0.09358614 0.009307264 0.3766846
+theta[3]  0.09345741 0.08751111 0.03964577 0.032521285 0.1893250
+theta[4]  0.11766235 0.11024043 0.02846340 0.071003241 0.1787288
+theta[5]  0.57524923 0.55177559 0.28940122 0.157449924 1.1665380
+theta[6]  0.58203693 0.56334600 0.14008764 0.331530339 0.8669417
+theta[7]  0.69768130 0.62549686 0.50411134 0.054544007 1.8669887
+theta[8]  0.77719746 0.63909643 0.60388032 0.084255029 2.3312958
+theta[9]  1.35283350 1.30830255 0.57907865 0.477656433 2.6002441
+theta[10] 1.95762569 1.92301336 0.42509663 1.294453143 2.7537917</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>mcmc.out<span class="sc">$</span>WAIC </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>nimbleList object of type waicNimbleList
+Field "WAIC":
+[1] 50.04197
+Field "lppd":
+[1] -20.13708
+Field "pWAIC":
+[1] 4.883904</code></pre>
+</div>
+</div>
+<ul>
+<li>At this point we have initial values for all of the nodes in the model, and we have both the original and compiled versions of the model.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using NIMBLE’s default MCMC</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>pumpConf <span class="ot">&lt;-</span> <span class="fu">configureMCMC</span>(pump, <span class="at">print =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>===== Monitors =====
+thin = 1: alpha, beta
+===== Samplers =====
+RW sampler (1)
+  - alpha
+conjugate sampler (11)
+  - beta
+  - theta[]  (10 elements)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>pumpConf<span class="sc">$</span><span class="fu">addMonitors</span>(<span class="fu">c</span>(<span class="st">"alpha"</span>, <span class="st">"beta"</span>, <span class="st">"theta"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>thin = 1: alpha, beta, theta</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>pumpMCMC <span class="ot">&lt;-</span> <span class="fu">buildMCMC</span>(pumpConf)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>CpumpMCMC <span class="ot">&lt;-</span> <span class="fu">compileNimble</span>(pumpMCMC, <span class="at">project =</span> pump)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+</div>
+<section id="crp-in-nimble" class="level3">
+<h3 class="anchored" data-anchor-id="crp-in-nimble">CRP in Nimble</h3>
+<ul>
+<li><p>NIMBLE supports sampling algorithms based on the CRP representation, as well as on the stick-breaking representation.</p></li>
+<li><p>The CRP is a distribution over the space of partitions of positive integers and is implemented in NIMBLE as the <code>dCRP</code> distribution. More details for using this distribution are available using <code>help(CRP)</code>.</p></li>
+<li><p>NIMBLE parametrizes the <code>dCRP</code> distribution by a concentration parameter and a size parameter. The <code>dCRP</code> distribution for a membership vector <code>z</code> is specified as <code>z[1:N] ~ dCRP(conc, size)</code>.</p>
+<ul>
+<li>The <code>conc</code> parameter is the concentration parameter of the CRP that controls the probability of creating a new cluster.</li>
+<li>The <code>size</code> parameter defines the size of the set of integers to be partitioned.</li>
+</ul></li>
+</ul>
+<p><span class="math display">\[
+y_i | \vec{\theta}, Diag(\vec{\sigma^2}), z_i \overset{\mathrm{ind}} \sim N(\theta_{z_i}, \sigma^2_{z_i}) \quad  \text{ for } i = 1, \cdots, N
+\]</span> <span class="math display">\[
+\vec{z} \sim CRP(\alpha)
+\]</span></p>
+<p>Priors: <span class="math display">\[
+\theta_j \sim \overset{\mathrm{iid}} N(0,100)
+\]</span> <span class="math display">\[
+\sigma_j^{2} \sim \overset{\mathrm{iid}} InvGamma(1,1)
+\]</span> <span class="math display">\[
+\alpha \sim Gamma(1,1)
+\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>code <span class="ot">&lt;-</span> <span class="fu">nimbleCode</span>({</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  z[<span class="dv">1</span><span class="sc">:</span>N] <span class="sc">~</span> <span class="fu">dCRP</span>(alpha, <span class="at">size =</span> N)</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>  alpha <span class="sc">~</span> <span class="fu">dgamma</span>(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>M) {</span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>    theta_vec[i] <span class="sc">~</span> <span class="fu">dnorm</span>(<span class="dv">0</span>, <span class="at">var =</span> <span class="dv">100</span>)</span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>    s2_vec[i] <span class="sc">~</span> <span class="fu">dinvgamma</span>(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N) </span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>    y[i] <span class="sc">~</span> <span class="fu">dnorm</span>(theta_vec[z[i]], <span class="at">var =</span> s2_vec[z[i]])  </span>
+<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a>constants <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="dv">100</span>, <span class="at">M =</span> <span class="dv">50</span>)</span>
+<span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> <span class="fu">c</span>(<span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="sc">-</span><span class="dv">5</span>, <span class="fu">sqrt</span>(<span class="dv">3</span>)), <span class="fu">rnorm</span>(<span class="dv">50</span>, <span class="dv">5</span>, <span class="fu">sqrt</span>(<span class="dv">4</span>))))</span>
+<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>inits <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta_vec_ =</span> <span class="fu">rnorm</span>(constants<span class="sc">$</span>M, <span class="dv">0</span>, <span class="dv">10</span>), </span>
+<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">s2_vec_ =</span> <span class="fu">rinvgamma</span>(constants<span class="sc">$</span>M, <span class="dv">1</span>, <span class="dv">1</span>), </span>
+<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>              <span class="at">z =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">size =</span> constants<span class="sc">$</span>N, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb76-18"><a href="#cb76-18" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha  =</span> <span class="dv">1</span>)</span>
+<span id="cb76-19"><a href="#cb76-19" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">nimbleModel</span>(code, constants, data, inits)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] 'theta_vec_' has initial values but is not a variable in the model and is being ignored.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] 's2_vec_' has initial values but is not a variable in the model and is being ignored.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] This model is not fully initialized. This is not an error.
+         To see which variables are not initialized, use model$initializeInfo().
+         For more information on model initialization, see help(modelInitialization).</code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<ol type="1">
+<li>(NIMBLE user manual)[https://r-nimble.org/html_manual/cha-welcome-nimble.html], NIMBLE version 1.2.1</li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -159,7 +159,7 @@ The most direct approach to invoking NIMBLE’s MCMC engine is using the `nimble
 # to execute two MCMC chains of 10 samples each, and return samples, summary statistics, and WAIC values
 mcmc.out <- nimbleMCMC(code = pumpCode, constants = pumpConsts,
                        data = pumpData, inits = pumpInits,
-                       nchains = 2, niter = 10000,
+                       nchains = 2, niter = 50,
                        summary = TRUE, WAIC = TRUE,
                        monitors = c('alpha','beta','theta'))
 ```
@@ -190,16 +190,76 @@ mcmc.out$WAIC
 pumpConf <- configureMCMC(pump, print = TRUE)
 ```
 
+```{r}
+pumpConf$addMonitors(c("alpha", "beta", "theta"))
+
+pumpMCMC <- buildMCMC(pumpConf)
+CpumpMCMC <- compileNimble(pumpMCMC, project = pump)
+```
+
+### CRP in Nimble
+* NIMBLE supports sampling algorithms based on the CRP representation, as well as on the stick-breaking representation. 
+
+* The CRP is a distribution over the space of partitions of positive integers and is implemented in NIMBLE as the `dCRP` distribution. More details for using this distribution are available using `help(CRP)`.
+
+* NIMBLE parametrizes the `dCRP` distribution by a concentration parameter and a size parameter. The `dCRP` distribution for a membership vector `z` is specified as `z[1:N] ~ dCRP(conc, size)`.
+  * The `conc` parameter is the concentration parameter of the CRP that controls the probability of creating a new cluster. 
+  * The `size` parameter defines the size of the set of integers to be partitioned.
+
+$$
+y_i | \vec{\theta}, Diag(\vec{\sigma^2}), z_i \overset{\mathrm{ind}} \sim N(\theta_{z_i}, \sigma^2_{z_i}) \quad  \text{ for } i = 1, \cdots, N
+$$
+$$
+\vec{z} \sim CRP(\alpha)
+$$
+
+Priors:
+$$
+\theta_j \sim \overset{\mathrm{iid}} N(0,100)
+$$
+$$
+\sigma_j^{2} \sim \overset{\mathrm{iid}} InvGamma(1,1)
+$$
+$$
+\alpha \sim Gamma(1,1)
+$$
+
+```{r}
+code <- nimbleCode({
+  z[1:N] ~ dCRP(alpha, size = N)
+  alpha ~ dgamma(1, 1)
+  for(i in 1:M) {
+    theta[i] ~ dnorm(0, var = 100)
+    s2[i] ~ dinvgamma(1, 1)
+  }
+  for(i in 1:N) 
+    y[i] ~ dnorm(theta[z[i]], var = s2[z[i]])  
+})
+
+set.seed(1)
+constants <- list(N = 100, M = 50)
+data <- list(y = c(rnorm(50, -5, sqrt(3)), rnorm(50, 5, sqrt(4))))
+inits <- list(theta = rnorm(constants$M, 0, 10), 
+              s2 = rinvgamma(constants$M, 1, 1), 
+              z = sample(1:10, size = constants$N, replace = TRUE),
+              alpha  = 1)
+model <- nimbleModel(code, constants, data, inits)
+```
 
 
+```{r}
+cmodel <- compileNimble(model)
+mcmc.out <- nimbleMCMC(code = code, constants = constants,
+                       data = data, inits = inits,
+                       nchains = 2, niter = 100,
+                       summary = TRUE, WAIC = FALSE,
+                       monitors = c('alpha','s2','theta', 'z'))
+```
 
 
-
-
-
-
-
-
+```{r}
+mcmc.out$samples
+```
 
 
 
