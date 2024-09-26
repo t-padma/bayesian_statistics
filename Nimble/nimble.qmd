@@ -5,7 +5,7 @@ format: html
 
 * NIMBLE is a system for building and sharing analysis methods for statistical models from R, especially for hierarchical models and computationally-intensive methods.
 
-* Minble uses a compiler that generates C++ for your models and algorithms, compiles that C++, and lets you use it seamlessly from R without knowing anything about C++.
+* Nimble uses a compiler that generates C++ for your models and algorithms, compiles that C++, and lets you use it seamlessly from R without knowing anything about C++.
 
 * NIMBLE stands for Numerical Inference for statistical Models for Bayesian and Likelihood Estimation.
 
@@ -272,7 +272,7 @@ mcmc.out$samples
 
 ### References
 1. (NIMBLE user manual)[https://r-nimble.org/html_manual/cha-welcome-nimble.html], NIMBLE version 1.2.1
-
+2. List of useful nimble resources is available at their website - (click here)[https://r-nimble.org/documentation-2]
 
 
 
