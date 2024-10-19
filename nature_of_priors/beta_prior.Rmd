@@ -1,0 +1,364 @@
+---
+title: "Non-parametric Bayes tutorial"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(ggtern)          # to construct ternary plots
+library(LearnBayes)      # to use the rdirichlet() function
+library(gridExtra)
+```
+
+# Beta distribution
+* We will look at the influence of shape parameters $a$, $b$ on distribution of mass on the interval $[0,1]$.
+
+* If $\rho \sim Beta(a,b)$, then the sample point $\rho$ can be interpreted as a probability. 
+
+* Corresponding to every draw $\rho$ from $Beta(a,b)$ for $a,b>0$ there exists a corresponding pmf $Bern(\rho)$. The converse correspondence holds as well. So, this is a one-to-one correspondence.
+
+* So a draw from $Beta(a,b)$ can be interpreted as probability of one of two possible categories. Values of $a$ and $b$ determine the chance of observing 1 and 2 respectively.
+
+```{r}
+param_vals = seq(0,1, by = 0.01)
+```
+
+* Case1: $a\geq 1$, $b\geq 1$ and $a\leq b$ 
+    * When $a<b$, we notice that $\rho$ tends to be smaller. This means that category one is less likely to occur in       comparision to that of category 2.
+```{r}
+# fix a value
+a = 1
+ab11 = dbeta(param_vals, shape1 = a, shape2 = 1)
+ab15 = dbeta(param_vals, shape1 = a, shape2 = 5)
+ab1_10 = dbeta(param_vals, shape1 = a, shape2 = 10)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab11), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab1_10), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+
+Case2: $a\geq1$, $b\geq 1$ and $a\geq b$ 
+    * When $a\geqb$, we notice that $\rho$ tends to be larger. This means that category one is more likely to occur        in comparison to that of category 2.
+```{r}
+# fix a value
+b = 1
+ab11 = dbeta(param_vals, shape1 = 1, shape2 = b)
+ab51 = dbeta(param_vals, shape1 = 5, shape2 = b)
+ab10_1 = dbeta(param_vals, shape1 = 10, shape2 = b)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab11), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab51), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_1), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+
+Case3: $a\geq1$, $b\geq 1$ and $a=b$ 
+Beta density is symmetric about $0.5$ when $a = b$ and $a, b \geq 1$. Since $a, b$ control probability of categories 1 and 2, we see that the density gets more and more peaked at $0.5$ as $a,b$ values increase. 
+```{r}
+# fix a value
+ab55 = dbeta(param_vals, shape1 = 5, shape2 = 5)
+ab10_10 = dbeta(param_vals, shape1 = 10, shape2 = 10)
+ab15_15 = dbeta(param_vals, shape1 = 15, shape2 = 15)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab55), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_10), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_15), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Case 4: $a<b$ and $a,b>1$: Density has a peak if both a and b are strictly more than 1. The densities are skewed such that probability of category 1 is on the lower side.
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 3, shape2 = 10)
+ab10_12 = dbeta(param_vals, shape1 = 3, shape2 = 15)
+ab15_17 = dbeta(param_vals, shape1 = 3, shape2 = 20)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Case 5: $a<b$ and $a < 1$ and $b \geq1$:
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 0.6, shape2 = 1)
+ab10_12 = dbeta(param_vals, shape1 = 0.6, shape2 = 2)
+ab15_17 = dbeta(param_vals, shape1 = 0.6, shape2 = 3)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+
+Case 6: $a>b$ and $a \geq 1$ and $b < 1$:
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 1, shape2 = 0.5)
+ab10_12 = dbeta(param_vals, shape1 = 1, shape2 = 0.6)
+ab15_17 = dbeta(param_vals, shape1 = 1, shape2 = 0.7)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Case 7: $a>b$ and $a, b < 1 $:
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 0.6, shape2 = 0.5)
+ab10_12 = dbeta(param_vals, shape1 = 0.7, shape2 = 0.5)
+ab15_17 = dbeta(param_vals, shape1 = 0.8, shape2 = 0.5)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Case 8: $a<b$ and $a, b < 1 $:
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 0.5, shape2 = 0.6)
+ab10_12 = dbeta(param_vals, shape1 = 0.5, shape2 = 0.7)
+ab15_17 = dbeta(param_vals, shape1 = 0.5, shape2 = 0.8)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Case 9: $a=b$ and $a, b < 1 $:
+```{r}
+# fix a value
+ab58 = dbeta(param_vals, shape1 = 0.1, shape2 = 0.1)
+ab10_12 = dbeta(param_vals, shape1 = 0.5, shape2 = 0.5)
+ab15_17 = dbeta(param_vals, shape1 = 0.9, shape2 = 0.9)
+
+ggplot(mapping = aes(x = param_vals)) +
+  geom_line(mapping = aes(y = ab58), color = "brown", linewidth = 1) +
+  geom_line(mapping = aes(y = ab10_12), color = "red", linewidth = 1) +
+  geom_line(mapping = aes(y = ab15_17), color = "orange", linewidth = 1) +
+  ylab("density")
+```
+
+Function to draw a sample from Beta distribution
+```{r}
+sample_pt = rbeta(1, 1, 3)
+sample_beta <- function(a,b){
+  p <- ggplot() +
+        geom_bar(mapping = aes(x = as.factor(c(1,2)), y = c(sample_pt, 1-sample_pt)), stat = "identity", width = 0.3) +
+        xlab("Categories") +
+        ylab("Probabilities") +
+        ggtitle(paste("A random draw from Beta(",a,",",b,")"))+
+        scale_y_continuous(limits = c(0, 1))
+  return(p)
+}
+
+sample_beta(1,3)
+```
+
+
+# Dirichlet Distribution
+ * Generalization of beta density.
+ 
+ * $Dir(\alpha)$ for $\alpha \in \mathbb{(R^+)}^K$ provides $K+1$ numbers that add up to 1. Support of $Dir(\alpha)$ for $\alpha \in \mathbb{R}^K$ is a $K$-simplex defined by convex combination of $K+1$ vertices.
+ 
+ * Just like in the case of beta distribution, the parameters $\alpha_1, \cdots, \alpha_K$ quantifies mass placed at categories $1, \cdots, K$.
+
+* In ternery plot, percentage of each category corresponds to the distance between the sample point and line opposite to it.
+```{r}
+alpha <- c(2, 2, 2)  # Dirichlet parameters
+N <- 1  # Number of samples
+
+data <- as.data.frame(rdirichlet(N, alpha))
+colnames(data) <- c("Cat1", "Cat2", "Cat3") # name the three categories
+
+# Create a ternary plot
+ggtern(data = data, aes(x = Cat1, y = Cat2, z = Cat3)) +
+  geom_point() +
+  labs(title = "Ternary Plot of Dirichlet Distribution",
+       x = "Cat1 %",
+       y = "Cat2 %",
+       z = "Cat3 %")
+```
+
+
+```{r}
+alpha1 <- c(1, 1, 1)  # Dirichlet parameters
+alpha3 <- c(3,3,3)
+alpha8 <- c(8,8,8)
+N <- 500  # Number of samples
+
+data1 <- as.data.frame(rdirichlet(N, alpha1))
+data3 <- as.data.frame(rdirichlet(N, alpha3))
+data8 <- as.data.frame(rdirichlet(N, alpha8))
+
+# name the three categories
+colnames(data1) <- c("Cat1", "Cat2", "Cat3") 
+colnames(data3) <- c("Cat1", "Cat2", "Cat3")
+colnames(data8) <- c("Cat1", "Cat2", "Cat3")
+
+# Create a ternary plot
+ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data1, color = "red") +
+        geom_point(data = data3, color = "blue") +
+        geom_point(data = data8, color = "yellow")
+        labs(title = "Ternary Plot of Dirichlet Distribution",
+            x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+```
+
+
+```{r}
+alpha1 <- c(1, 2, 10)  # Dirichlet parameters
+alpha3 <- c(30,3,5)
+alpha8 <- c(4,18,5)
+N <- 500  # Number of samples
+
+data1 <- as.data.frame(rdirichlet(N, alpha1))
+data3 <- as.data.frame(rdirichlet(N, alpha3))
+data8 <- as.data.frame(rdirichlet(N, alpha8))
+
+# name the three categories
+colnames(data1) <- c("Cat1", "Cat2", "Cat3") 
+colnames(data3) <- c("Cat1", "Cat2", "Cat3")
+colnames(data8) <- c("Cat1", "Cat2", "Cat3")
+
+# Create a ternary plot
+ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data1, color = "red") +
+        geom_point(data = data3, color = "blue") +
+        geom_point(data = data8, color = "yellow")
+        labs(title = "Ternary Plot of Dirichlet Distribution",
+            x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+```
+
+
+
+
+```{r}
+alpha1 <- c(0.1, 0.1, 0.1)  # Dirichlet parameters
+alpha3 <- c(0.3,0.3,0.3)
+alpha8 <- c(0.8,0.8,0.8)
+N <- 500  # Number of samples
+
+data1 <- as.data.frame(rdirichlet(N, alpha1))
+data3 <- as.data.frame(rdirichlet(N, alpha3))
+data8 <- as.data.frame(rdirichlet(N, alpha8))
+
+# name the three categories
+colnames(data1) <- c("Cat1", "Cat2", "Cat3") 
+colnames(data3) <- c("Cat1", "Cat2", "Cat3")
+colnames(data8) <- c("Cat1", "Cat2", "Cat3")
+
+# Create a ternary plot
+ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data1, color = "black") +
+        geom_point(data = data3, color = "blue") +
+        geom_point(data = data8, color = "red")
+        labs(title = "Ternary Plot of Dirichlet Distribution",
+            x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+```
+
+
+```{r}
+p1 <- ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data1, color = "black") +
+        labs(x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+
+p2 <- ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data3, color = "blue") +
+        labs(x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+
+p3 <- ggtern(mapping = aes(x = Cat1, y = Cat2, z = Cat3)) +
+        geom_point(data = data8, color = "red") +
+        labs(x = "Cat1 %",
+            y = "Cat2 %",
+            z = "Cat3 %")
+
+grid.arrange(p1, p2, p3, nrow = 1)
+```
+
+Function to draw a sample from Dirichlet distribution
+```{r}
+# Function to sample from Dirichlet distribution and plot bar chart using ggplot2
+
+sample_dir <- function(alpha) {
+  
+  # Sample a point from Dirichlet distribution
+  sampled_point <- rdirichlet(1, alpha)
+  
+  # Convert the sampled point to a data frame
+  df <- data.frame(Category = factor(seq_along(sampled_point), 
+                                     labels = paste0("Category ", seq_along(sampled_point))),                              Probability = as.vector(sampled_point))
+  
+  # Plot the bar chart using geom_bar
+  ggplot(df, aes(x = Category, y = Probability, fill = Category)) +
+    geom_bar(stat = "identity") +
+    labs(title = "Sampled Point from Dirichlet Distribution",
+         x = "Categories", y = "Probability") 
+}
+
+# Example usage
+alpha <- c(1, 2, 3, 4,4)
+sample_dir(alpha)
+```
+
+
+# What if K > N?
+* More clusters than data points. This means that there will be empty clusters.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
