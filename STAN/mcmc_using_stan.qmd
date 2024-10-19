@@ -16,10 +16,10 @@ There are two steps involved in defining a `rstan` model:
 
 Let us look at Beta-Binomial example.
 
-$$
+\begin{align*}
 Y | \pi \sim Binom(10,\pi) \\
 \pi \sim Beta(2,2)
-$$
+\end{align*}
 
 By Beta-Binomial conjugacy, we know that the posterior is $\pi | Y=y \sim Beta(2 + y, 2+10-y)$. The function `stan()`, loosely speaking, chooses an appropriate MCMC algorithm and runs it to produce apprximate samples from Beta-Binomial posterior.
 
@@ -44,7 +44,7 @@ bb_model <- "
 bb_sim <- stan(model_code = bb_model,  # character string defining model
                data = list(Y = 9),     # list of observed data
                chains = 4,             # number of parallel Markov chains to run
-               iter = 5000 * 2,        # number of iterations or length of each Markov chain   # nolint
+               iter = 5000 * 2,        # number of iterations or length of each Markov chain   
                seed = 84735)
 ```
 
@@ -93,7 +93,7 @@ mcmc_dens(bb_sim, pars = "pi") +
   ylab("count")
 ```
 
-* When we are unable to provide derive a posterior, simulated samples provide a crucial _approximation_. Simulations aren't perfect. This motivates us towards **Markov Chain Diagnostics**.   MCMC diagnostics deal with the following questions:
+* When we are unable to provide or derive a posterior, simulated samples provide a crucial _approximation_. Simulations aren't perfect. This motivates us towards **Markov Chain Diagnostics**.   MCMC diagnostics deal with the following questions:
 1. How does a "good" Markov chain look like?
 2. How to tell if our MC samples provide a "reasonable" approximation to the posterior?
 3. How "big" should our MC sample size be?
@@ -105,7 +105,7 @@ mcmc_dens(bb_sim, pars = "pi") +
 
 * The traceplots below are taken from Ch6 of the Bayesrules textbook. They are examples of "bad" chain behaviour.
 
-![](./images/trace.png)
+![](../images/trace.png)
 
 > First, consider the trace plots in Figure 6.12 (left). The downward trend in Chain A indicates that it has not yet stabilized after 5,000 iterations – it has not yet “found” or does not yet know how to explore the range of posterior plausible π values. The downward trend also hints at strong correlation among the chain values – they don’t look like independent noise. All of this to say that Chain A is mixing slowly. This is bad. Though Markov chains are inherently dependent, the more they behave like fast mixing (noisy) independent samples, the smaller the error in the resulting posterior approximation (roughly speaking). Chain B exhibits a different problem. As evidenced by the two completely flat lines in the trace plot, it tends to get stuck when it visits smaller values of π.
 
@@ -115,13 +115,49 @@ mcmc_dens(bb_sim, pars = "pi") +
   * Check the model. Are the assumed prior and data models appropriate?
   * Run the chain for more iterations. Some undesirable short-term chain trends might iron out in the long term.
 
+* When working with parallel MCs, we want to observe the following:
+  * Each parallel chain takes a different path but they exhibit similar features and produce similar posterior approximations. Some examples of such similar chain behaviour is:
+    * trace plots of different MCs exhibit similar randomness.
+    * the parallel chains produce similar posterior approximations
+  * All the parallel MCs should be "stable" according to the discussion earlier.
+ These observations provides evidence that our simulation is stable and sufficiently long
+
+```{r}
+# Density plots of individual chains
+mcmc_dens_overlay(bb_sim, pars = "pi") + 
+  ylab("density")
+```
+
+* We know that the error in approximation is likely larger when we work with MC samples than if we had used 20,000 independent sample values drawn directly from the posterior. This leads to the following question: Relatively, how many independent sample values would it take to produce an equivalently accurate posterior approximation? The **effective sample size ratio** provides an answer.
+
+* Let $N$ be length of a dependent Markov chain. The **effective sample size** of this chain, $N_{eff}$, quantifies the number of independent samples it would take to produce an equivalently accurate posterior approximation.
+$$
+\text{Eff. Sample Size Ratio = } \frac{N_{eff}}{N}.
+$$
+
+* Typically, $N_{eff} < N$.There’s no magic rule for interpreting this ratio, and it should be utilized alongside other diagnostics such as the trace plot. However, a ratio less than $0.1$ is likely concerning.
+
+```{r}
+# Calculate the effective sample size ratio
+# the accuracy in using our 20,000 length MC to approximate the posterior of pi is as good as using 34% as many indpt values from true post.
+# So 20k dependent MC values are equivalent to 0.34 * 20k = 6800 independent samples (approx) from true posterior
+neff_ratio(bb_sim, pars = c("pi"))
+[1] 0.3361
+```
 
 
+* **Autocorrelation** provides another metric by which to evaluate whether our Markov chain sufficiently mimics the behavior of an independent sample. 
+  * Strong autocorrelation is undesirable. It usually implies small effective sample size i.e. it implies unreliable posterior approximation.
+  * However, by construction the MCs are inherently going to have some autocorrelation among the chain values. Yet this dependence, or autocorrelation, fades. 
 
+* **Lag 1 autocorrelation** measures the correlation between pairs of Markov chain values that are one “step” apart (e.g., $\pi^{(i)}$ and $\pi^{(i-1)}$). Similarly, **Lag 2 autocorrelation** measures the correlation between pairs of Markov chain values that are two “steps” apart (e.g., $\pi^{(i)}$ and $\pi^{(i-2)}$). And so on.
 
-
-
-
+```{r}
+# notice that there are no obvious patterns in the trace plot.
+# This provides evidence that, though the chain values are dependent, this dependence is relatively weak and limited to small lags. 
+mcmc_trace(bb_sim, pars = "pi")
+mcmc_acf(bb_sim, pars = "pi")
+```
 
 
 

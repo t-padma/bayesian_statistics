@@ -1,0 +1,392 @@
+---
+title: "Capture-Recapture models in Nimble"
+format:
+  html:
+    code-fold: false
+---
+
+# Part 1: Intro to NIMBLE
+* Capture-recapture analysis is also called mark- or multiple-recapture methodology. The goal of capture-recapture is usually to estimate population size. Some examples where this method can be applied are:
+    * animal abundance 
+    * number of errors in software programs
+    * estimating the size of an author's vocabulary
+    * number of animals affected by given disease
+    * number of coins in circulation in an ancient economy
+
+* While working with these models, we can assume closed (fixed) populations or open populations. Once can incorporate covariates or predictors that effect the recapture process. The spatial location of the captures can be incorporated into the analysis as well.
+
+* To run NIMBLE, we need to:
+    1. Build a model consisting of a likelihood and priors.
+    2. Read in some data.
+    3. Specify parameters you want to make inference about.
+    4. Pick initial values for parameters to be estimated (for each chain).
+    5. Provide MCMC details namely the number of chains, the length of the burn-in period and the number of iterations following burn-in.
+    6. Posterior inference
+
+```{r}
+#| warning: false
+library(nimble)
+library(ggplot2)
+library(tidyverse)
+library(MCMCvis)
+```
+
+### Step 1: Build a model consisting of a likelihood and priors.
+Model formulation:
+Let $S$ be number who animals that survived winter out of $R$ trials or number of recaptures. The probability of "success" here is modeled as $\theta$.Finally, $L$ represents the derived quantity called expected lifespan. 
+
+For instance, we capture, mark and release $R = 57$ animals at the beginning of a winter, out of which we recapture $S=19$ animals alive.We’d like to estimate winter survival $\theta$. 
+
+\begin{align*}
+S \sim Binom(R, \theta) \\
+\theta \sim Unif(0,1) \\
+L = -\frac{1}{\theta}
+\end{align*}
+
+```{r}
+model <- nimbleCode({
+  # likelihood
+  S ~ dbinom(theta, R)
+  # prior
+  theta ~ dunif(0, 1)
+  # derived quantity
+  L <- -1/log(theta)
+})
+
+# provides model summary
+model
+```
+
+* It does not matter in what order you write each line of code, NIMBLE uses what is called a declarative language for building models. In brief, you write code that tells NIMBLE what you want to achieve, and not how to get there. In contrast, an imperative language requires that you write what you want your program to do step by step.
+
+### Step 2: Read in some data.
+```{r}
+my.data <- list(R = 57, S = 19)
+```
+
+* Understanding how NIMBLE sees datais important. NIMBLE distinguishes data and constants.
+    * Constants are values that do not change, e.g. vectors of known index values or the indices used to define for loops.
+    * Data are values that you might want to change, basically anything that only appears on the left of a ~.
+    * Declaring relevant values as constants is better for computational efficiency, but it is easy to forget, and fortunately NIMBLE will by itself distinguish data and constants.
+
+
+### Step 3: Specify parameters you want to make inference about.
+
+```{r}
+# quantities we want to perform inference about
+parameters.to.save <- c("theta", "L")
+```
+
+### Step 4: Pick initial values for parameters to be estimated (for each chain).
+
+* To make sure that the MCMC algorithm explores the posterior distribution, we start different chains with different parameter values. 
+
+```{r}
+init1 <- list(theta = 0.1)
+init2 <- list(theta = 0.5)
+init3 <- list(theta = 0.9)
+initial.values <- list(init1, init2, init3)
+```
+
+* Note that, if we use a function to generate random initial values, it’s always a good idea to set the seed in your code before you draw the initial values.
+
+### Step 5: Provide MCMC details
+
+* Note that NIMBLE also allows discarding samples after burn-in, a procedure known as thinning. Thinning is fixed to 1 by default in NIMBLE so that all simulations are used to summarise posterior distributions. 
+```{r}
+# total number of iterations (including the burn-in period) to be used for posterior inference
+n.iter <- 5000
+
+# number of samples to discard as burn-in
+n.burnin <- 1000
+
+# number of parallel MCs
+n.chains <- 3
+```
+
+* Now we have all the ingredients we need to sample from the posterior of $\theta$ using MCMC simulations. This can be accomplished using the function `nimbleMCMC`.
+
+```{r}
+mcmc.output <- nimbleMCMC(code = model,
+                          data = my.data,
+                          inits = initial.values,
+                          monitors = parameters.to.save,
+                          niter = n.iter,
+                          nburnin = n.burnin,
+                          nchains = n.chains)
+#                          summary = TRUE)
+# Note: structure of mcmc.output will be different based on whether we choose summary = T or F
+```
+
+* Some other useful arguments that `nimbleMCMC` takes:
+    * `setSeed`: setting the seed within the MCMC call allows you to run the same chains (again), thus making your analyses reproducible.
+    * `summary = TRUE`: to get a summary of the outputs.
+    * `samplesAsCodaMCMC = TRUE`: to get the MCMC samples back (in `coda mcmc` format).
+    * `progressBar = FALSE`: to supress the progress bar while the simulations occur.
+
+### Step 6: Posterior inference
+```{r}
+# mcmc.output object is a list with three matrix elements - one for each MCMC chain
+str(mcmc.output)
+```
+
+* Let us look at the first MC samples.
+```{r}
+# two cols - one for L, one for theta
+head(mcmc.output$chain1)
+
+# dim = 4000*2
+# we have n.iter - n.burnin many samples for posterior inference
+dim(mcmc.output$chain1)
+```
+
+* Basic posterior inference like computing posterior mean and computing $95 \%$ credible intervals.
+
+```{r}
+# posterior mean for survival rate theta
+# approx 0.34
+mean(mcmc.output$chain1[,'theta'])
+
+# 95% credible interval for theta
+# theta \in (0.226, 0.466)
+quantile(mcmc.output$chain1[,'theta'], probs = c(2.5, 97.5)/100)
+```
+
+* We will now visualize samples from the posterior distribution.
+```{r}
+# histogram of samples from the posterior distr of theta
+mcmc.output$chain1[,"theta"] %>%
+  as_tibble() %>%
+  ggplot() +
+  geom_histogram(aes(x = value), color = "white") +
+  labs(x = "survival probability")
+```
+
+* Some R packages that are useful in performing posterior inference are `MCMCvis`, `ggmcmc`, `bayesplot`, and `basicMCMCplots`. The resource I followed focuses on `MCMCvis` package.
+
+* Use `MCMCsummary()` to get the most common MCMC related numerical summaries.
+```{r}
+# round it off upto two digits
+MCMCsummary(object = mcmc.output, round = 2)
+```
+
+```{r}
+# caterpillar plot to visualise the posterior distributions
+# The point represents the posterior median
+# the thick line is the 50% credible interval and the thin line the 95% credible interval.
+MCMCplot(object = mcmc.output, params = 'theta')
+```
+
+* We can visualize MCMC samples using a trace plot. In a trace plot, the values of posterior samples are plotted against iteration number.
+
+* We use the trace and density plots for assessing convergence and get an idea of whether there may be any estimation issues.
+
+```{r}
+MCMCtrace(object = mcmc.output,
+          pdf = FALSE, # no export to PDF
+          ind = TRUE, # separate density lines per chain
+          params = "theta")
+```
+
+* The extra arguments `Rhat` and `n.eff` within the `MCMCtrace()` function can be used to include some diagnostic summaries in the trace plots.
+```{r}
+MCMCtrace(object = mcmc.output,
+          pdf = FALSE,
+          ind = TRUE,
+          Rhat = TRUE, # add Rhat
+          n.eff = TRUE, # add eff sample size
+          params = "theta")
+```
+
+* A nice by-product of working with MCMC simulations is that we can obtain the posterior distribution of any quantity that is a function of your model parameters by applying this function to samples from the posterior distribution of these parameters. Eg. Use posterior samples for $\theta$ to estimate $L$.
+
+* Especially when working with big models/data, it is recommended to keep any calculations that can be made “post-hoc” using the posterior samples outside of NIMBLE as this lessens memory load.
+    * In our example, all we need are samples from the posterior distribution of $\theta$, which we pool between the three chains.
+
+```{r}
+# concatenate the three MCs
+theta_samples <- c(mcmc.output$chain1[,'theta'], 
+                   mcmc.output$chain2[,'theta'],
+                   mcmc.output$chain3[,'theta'])
+
+# samples from the posterior distribution of lifespan 
+lifespan <- -1/log(theta_samples)
+```
+
+```{r}
+# posterior mean
+mean(lifespan)
+
+# 95% credible interval
+quantile(lifespan, probs = c(2.5, 97.5)/100)
+
+# visualize posterior distr of lifespan
+lifespan %>%
+  as_tibble() %>%
+  ggplot() +
+  geom_histogram(aes(x = value), color = "white") +
+  labs(x = "lifespan")
+```
+
+* To summarize, following is the NIMBLE workflow
+
+```
+# model building
+model <- nimbleCode({
+  # likelihood
+  survived ~ dbinom(theta, released)
+  # prior
+  theta ~ dunif(0, 1)
+  # derived quantity
+  lifespan <- -1/log(theta)
+})
+
+
+# read in data
+my.data <- list(released = 57, survived = 19)
+
+
+# specify parameters to monitor
+parameters.to.save <- c("theta", "lifespan")
+
+
+# pick initial values
+initial.values <- function() list(theta = runif(1,0,1))
+
+
+# specify MCMC details
+n.iter <- 5000
+n.burnin <- 1000
+n.chains <- 3
+
+
+# run NIMBLE
+mcmc.output <- nimbleMCMC(code = model,
+                          data = my.data,
+                          inits = initial.values,
+                          monitors = parameters.to.save,
+                          niter = n.iter,
+                          nburnin = n.burnin,
+                          nchains = n.chains)
+
+
+# calculate numerical summaries
+MCMCsummary(object = mcmc.output, round = 2)
+
+
+# visualize parameter posterior distribution
+MCMCplot(object = mcmc.output, 
+         params = 'theta')
+
+
+# check convergence
+MCMCtrace(object = mcmc.output,
+          pdf = FALSE, # no export to PDF
+          ind = TRUE, # separate density lines per chain
+          params = "theta")
+```
+
+# Part 2: NIMBLE Functions
+* Provides a programming environment so that we can have full control over building models and estimating parameters.
+
+* NIMBLE allows us to write our own functions and distributions to build models, and to choose alternative MCMC samplers or code new ones. This flexibility often comes with faster convergence and often faster runtime.
+
+* In NIMBLE we can write and use our own functions, or use existing R or C/C++ functions. This allows us to customize models the way we want.
+
+* NIMBLE provides `nimbleFunctions` for programming. A `nimbleFunction` is like an R function, plus it can be compiled for faster computation. 
+
+* Here is an example of `nimbleFunctions` to compute `lifespan`
+```{r}
+computeLifespan <- nimbleFunction(
+    # the function to be executed, it is written in NIMBLE language
+    run = function(theta = double(0)) { 
+        ans <- -1/log(theta)
+        return(ans)
+        returnType(double(0))  
+    } 
+    )
+```
+
+* The `theta = double(0)` and `returnType(double(0))` arguments tell NIMBLE that the input and output are single numeric values (scalars).
+
+* Alternatively, `double(1)` and `double(2)` are for vectors and matrices, while `logical()`, `integer()` and `character()` are for logical, integer and character values.
+
+```{r}
+# check
+computeLifespan(0.8)
+```
+
+* We can compile it and use the C++ code for faster computations
+```{r}
+# compile
+CcomputeLifespan <- compileNimble(computeLifespan)
+
+# compute
+CcomputeLifespan(0.8)
+```
+
+* Note that we can also use the `nimbleFunction` in a model. For instance, 
+```{r}
+model <- nimbleCode({
+  # likelihood
+  survived ~ dbinom(theta, released)
+  # prior
+  theta ~ dunif(0, 1)
+  # derived quantity defined using nimbleFunction object
+  lifespan <- computeLifespan(theta)
+})
+```
+
+* The rest of the workflow remains the same:
+```{r}
+parameters.to.save <- c("theta", "lifespan")
+initial.values <- function() list(theta = runif(1,0,1))
+n.iter <- 5000
+n.burnin <- 1000
+n.chains <- 3
+mcmc.output <- nimbleMCMC(code = model,
+                          data = my.data,
+                          inits = initial.values,
+                          monitors = parameters.to.save,
+                          niter = n.iter,
+                          nburnin = n.burnin,
+                          nchains = n.chains)
+```
+
+* See [Chapter 11](https://r-nimble.org/html_manual/cha-RCfunctions.html#cha-RCfunctions) of the NIMBLE manual to learn more about `nimbleFunctions()`
+
+# Part 3: Customizing MCMC samplers
+
+* So far, we worked with `nimbleMCMC()`, which runs the default MCMC workflow. Sometimes we will want to customize the MCMC samplers to improve or speed up convergence.
+
+* NIMBLE allows you to look under the hood by using a detailed workflow in several steps: `nimbleModel()`, `configureMCMC()`, `buildMCMC()`, `compileNimble()` and `runMCMC()`. Note that `nimbleMCMC()` does all of this at once.
+    * `nimbleModel()`: to create the model as an R object (uncompiled model). 
+    * `compileNimble()`: to compile the model. By a compiled model, we mean that the corresponding C++ code is generated, compiled and loaded back into R so that it can be used in R 
+
+* In the example below, we have two version of of the model, (uncompiled model) `survival` is in R and (compiled model) `Csurvival` in C++. 
+
+```{r}
+# first, we define the model (as usual)
+model <- nimbleCode({
+  # likelihood
+  survived ~ dbinom(theta, released)
+  # prior
+  theta ~ dunif(0, 1)
+  # derived quantity
+  lifespan <- -1/log(theta)
+})
+
+# read in data and set initial values
+my.data <- list(survived = 19, released = 57)
+initial.values <- list(theta = 0.5)
+
+# create the model as an R object (uncompiled model) 
+survival <- nimbleModel(code = model,
+                        data = my.data,
+                        inits = initial.values)
+
+# compile model
+Csurvival <- compileNimble(survival)
+```
+
+* Being able to separate the steps of model building and parameter estimation is a strength of NIMBLE. 

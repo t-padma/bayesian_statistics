@@ -1,0 +1,138 @@
+---
+title: "Clustering Iris dataset using DPMM"
+format:
+  html:
+    code-fold: false
+---
+
+```{r}
+library(nimble)
+library(MCMCvis)
+```
+
+```{r}
+head(iris)
+
+# dataset we want to cluster
+iris_df <- iris[,1:4]
+head(iris_df)
+data_dim <- ncol(iris_df)
+
+mu0 <- apply(iris_df, 2, mean)
+
+cov_hat <- cov(as.matrix(iris_df))
+```
+
+**Model Specification:**
+Data: $\vec{y}_1, \cdots, \vec{y}_{150}$ such that $\vec{y}_i \in \mathbb{R}^D$. Here $D = 4$.
+
+Here, $\mu \in \mathbb{R}^M$ where $M$ represents number of occupied components (or number of clusters).
+
+$z \in \mathbb{R}^N$ is the assignment variable for all $N$ data points.
+
+\begin{align*}
+y_{ij} | z_i, \theta, \sigma^2 \sim N(y_{ij}|\theta_{z_i}, \sigma^2 \mathcal{I}_D) \\
+\theta_k \sim N(0,1) \quad \forall \text{ components } k \\
+\sigma^2 \sim InvGamma(1,1) \\
+z | \alpha \sim CRP(\alpha) \\
+\alpha \sim Gamma(1,1)
+\end{align*}
+
+
+
+```{r}
+iris_model <- nimbleCode({
+  # likelihood
+    for(i in 1:N) {
+    for(j in 1:D) { # D = data dim
+      y[i, j] ~ dnorm(theta[z[i]], var = sigma2)
+    }
+  }
+  # priors
+  z[1:N] ~ dCRP(alpha, size = N)
+  alpha ~ dgamma(1, 1)
+  sigma2 ~ dinvgamma(1, 1)
+  for(i in 1:M) {
+    theta[i] ~ dnorm(0, var = 1) 
+  }
+})
+
+```
+
+
+
+```{r}
+# N = number of data points or y's
+# M = number of unique cluster parameters
+# d = data dimension
+constants <- list(N = nrow(iris_df), M = 10, D = ncol(iris_df))
+
+# data
+iris_df_list <- list(y = as.matrix(iris_df))
+
+# set initial values
+inits <- list(theta = rnorm(constants$M, 0, 5), 
+              z = sample(1:5, size = constants$N, replace = TRUE),
+              alpha  = 1,
+              sigma2 = 1)
+```
+
+
+```{r}
+# uncompiled R model
+iris_R_model <- nimbleModel(iris_model, constants, iris_df_list, inits)
+```
+
+Running default MCMC using `nimbleMCMC`
+
+```{r}
+parameters.to.save <- c("z", "theta")
+n.iter <- 30000
+n.burnin <- 5000
+n.chains <- 4
+iris.mcmc.output <- nimbleMCMC(code = iris_R_model,
+                          data = iris_df_list,
+                          inits = inits,
+                          monitors = parameters.to.save,
+                          niter = n.iter,
+                          nburnin = n.burnin,
+                          nchains = n.chains) 
+```
+
+```{r}
+str(iris.mcmc.output)
+```
+
+```{r}
+# 15000 * 160
+# 10 theta_i's and 150 z_i's
+dim(iris.mcmc.output$chain1)
+```
+
+```{r}
+head(iris.mcmc.output$chain1)
+```
+
+```{r}
+MCMCtrace(object = iris.mcmc.output,
+          pdf = FALSE, # no export to PDF
+          ind = TRUE, # separate density lines per chain
+          params = "theta")
+```
+
+
+
+Configuring samplers
+```{r}
+# compiled C model
+iris_C_model <- compileNimble(iris_R_model)
+```
+
+```{r}
+irisConf <- configureMCMC(iris_R_model)
+irisConf$printSamplers()
+irisConf$addSampler(target = c('z'), type = 'RW_block')
+irisConf$printSamplers()
+
+irisMCMC2 <- buildMCMC(irisConf)
+```

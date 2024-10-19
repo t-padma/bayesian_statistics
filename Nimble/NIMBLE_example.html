@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Capture-Recapture models in Nimble</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="ecology_files/libs/clipboard/clipboard.min.js"></script>
+<script src="ecology_files/libs/quarto-html/quarto.js"></script>
+<script src="ecology_files/libs/quarto-html/popper.min.js"></script>
+<script src="ecology_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="ecology_files/libs/quarto-html/anchor.min.js"></script>
+<link href="ecology_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="ecology_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="ecology_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="ecology_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="ecology_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Capture-Recapture models in Nimble</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="part-1-intro-to-nimble" class="level1">
+<h1>Part 1: Intro to NIMBLE</h1>
+<ul>
+<li><p>Capture-recapture analysis is also called mark- or multiple-recapture methodology. The goal of capture-recapture is usually to estimate population size. Some examples where this method can be applied are:</p>
+<ul>
+<li>animal abundance</li>
+<li>number of errors in software programs</li>
+<li>estimating the size of an author’s vocabulary</li>
+<li>number of animals affected by given disease</li>
+<li>number of coins in circulation in an ancient economy</li>
+</ul></li>
+<li><p>While working with these models, we can assume closed (fixed) populations or open populations. Once can incorporate covariates or predictors that effect the recapture process. The spatial location of the captures can be incorporated into the analysis as well.</p></li>
+<li><p>To run NIMBLE, we need to:</p>
+<ol type="1">
+<li>Build a model consisting of a likelihood and priors.</li>
+<li>Read in some data.</li>
+<li>Specify parameters you want to make inference about.</li>
+<li>Pick initial values for parameters to be estimated (for each chain).</li>
+<li>Provide MCMC details namely the number of chains, the length of the burn-in period and the number of iterations following burn-in.</li>
+<li>Posterior inference</li>
+</ol></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nimble)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MCMCvis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="step-1-build-a-model-consisting-of-a-likelihood-and-priors." class="level3">
+<h3 class="anchored" data-anchor-id="step-1-build-a-model-consisting-of-a-likelihood-and-priors.">Step 1: Build a model consisting of a likelihood and priors.</h3>
+<p>Model formulation: Let <span class="math inline">\(S\)</span> be number who animals that survived winter out of <span class="math inline">\(R\)</span> trials or number of recaptures. The probability of “success” here is modeled as <span class="math inline">\(\theta\)</span>.Finally, <span class="math inline">\(L\)</span> represents the derived quantity called expected lifespan.</p>
+<p>For instance, we capture, mark and release <span class="math inline">\(R = 57\)</span> animals at the beginning of a winter, out of which we recapture <span class="math inline">\(S=19\)</span> animals alive.We’d like to estimate winter survival <span class="math inline">\(\theta\)</span>.</p>
+<p><span class="math display">\[\begin{align*}
+S \sim Binom(R, \theta) \\
+\theta \sim Unif(0,1) \\
+L = -\frac{1}{\theta}
+\end{align*}\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">nimbleCode</span>({</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># likelihood</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  S <span class="sc">~</span> <span class="fu">dbinom</span>(theta, R)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prior</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  theta <span class="sc">~</span> <span class="fu">dunif</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># derived quantity</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  L <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="fu">log</span>(theta)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># provides model summary</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{
+    S ~ dbinom(theta, R)
+    theta ~ dunif(0, 1)
+    L &lt;- -1/log(theta)
+}</code></pre>
+</div>
+</div>
+<ul>
+<li>It does not matter in what order you write each line of code, NIMBLE uses what is called a declarative language for building models. In brief, you write code that tells NIMBLE what you want to achieve, and not how to get there. In contrast, an imperative language requires that you write what you want your program to do step by step.</li>
+</ul>
+</section>
+<section id="step-2-read-in-some-data." class="level3">
+<h3 class="anchored" data-anchor-id="step-2-read-in-some-data.">Step 2: Read in some data.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>my.data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> <span class="dv">57</span>, <span class="at">S =</span> <span class="dv">19</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Understanding how NIMBLE sees datais important. NIMBLE distinguishes data and constants.
+<ul>
+<li>Constants are values that do not change, e.g.&nbsp;vectors of known index values or the indices used to define for loops.</li>
+<li>Data are values that you might want to change, basically anything that only appears on the left of a ~.</li>
+<li>Declaring relevant values as constants is better for computational efficiency, but it is easy to forget, and fortunately NIMBLE will by itself distinguish data and constants.</li>
+</ul></li>
+</ul>
+</section>
+<section id="step-3-specify-parameters-you-want-to-make-inference-about." class="level3">
+<h3 class="anchored" data-anchor-id="step-3-specify-parameters-you-want-to-make-inference-about.">Step 3: Specify parameters you want to make inference about.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># quantities we want to perform inference about</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>parameters.to.save <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"theta"</span>, <span class="st">"L"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="step-4-pick-initial-values-for-parameters-to-be-estimated-for-each-chain." class="level3">
+<h3 class="anchored" data-anchor-id="step-4-pick-initial-values-for-parameters-to-be-estimated-for-each-chain.">Step 4: Pick initial values for parameters to be estimated (for each chain).</h3>
+<ul>
+<li>To make sure that the MCMC algorithm explores the posterior distribution, we start different chains with different parameter values.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>init1 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta =</span> <span class="fl">0.1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>init2 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta =</span> <span class="fl">0.5</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>init3 <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta =</span> <span class="fl">0.9</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>initial.values <span class="ot">&lt;-</span> <span class="fu">list</span>(init1, init2, init3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Note that, if we use a function to generate random initial values, it’s always a good idea to set the seed in your code before you draw the initial values.</li>
+</ul>
+</section>
+<section id="step-5-provide-mcmc-details" class="level3">
+<h3 class="anchored" data-anchor-id="step-5-provide-mcmc-details">Step 5: Provide MCMC details</h3>
+<ul>
+<li>Note that NIMBLE also allows discarding samples after burn-in, a procedure known as thinning. Thinning is fixed to 1 by default in NIMBLE so that all simulations are used to summarise posterior distributions.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># total number of iterations (including the burn-in period) to be used for posterior inference</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>n.iter <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># number of samples to discard as burn-in</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>n.burnin <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># number of parallel MCs</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>n.chains <span class="ot">&lt;-</span> <span class="dv">3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Now we have all the ingredients we need to sample from the posterior of <span class="math inline">\(\theta\)</span> using MCMC simulations. This can be accomplished using the function <code>nimbleMCMC</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mcmc.output <span class="ot">&lt;-</span> <span class="fu">nimbleMCMC</span>(<span class="at">code =</span> model,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">data =</span> my.data,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">inits =</span> initial.values,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">monitors =</span> parameters.to.save,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">niter =</span> n.iter,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">nburnin =</span> n.burnin,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                          <span class="at">nchains =</span> n.chains)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model calculations</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 1...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 2...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 3...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#                          summary = TRUE)</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: structure of mcmc.output will be different based on whether we choose summary = T or F</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Some other useful arguments that <code>nimbleMCMC</code> takes:
+<ul>
+<li><code>setSeed</code>: setting the seed within the MCMC call allows you to run the same chains (again), thus making your analyses reproducible.</li>
+<li><code>summary = TRUE</code>: to get a summary of the outputs.</li>
+<li><code>samplesAsCodaMCMC = TRUE</code>: to get the MCMC samples back (in <code>coda mcmc</code> format).</li>
+<li><code>progressBar = FALSE</code>: to supress the progress bar while the simulations occur.</li>
+</ul></li>
+</ul>
+</section>
+<section id="step-6-posterior-inference" class="level3">
+<h3 class="anchored" data-anchor-id="step-6-posterior-inference">Step 6: Posterior inference</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mcmc.output object is a list with three matrix elements - one for each MCMC chain</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(mcmc.output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>List of 3
+ $ chain1: num [1:4000, 1:2] 0.907 0.907 0.829 0.972 0.922 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:2] "L" "theta"
+ $ chain2: num [1:4000, 1:2] 1.05 1.05 1.1 1.17 1.17 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:2] "L" "theta"
+ $ chain3: num [1:4000, 1:2] 0.859 0.859 0.859 0.816 1.215 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:2] "L" "theta"</code></pre>
+</div>
+</div>
+<ul>
+<li>Let us look at the first MC samples.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># two cols - one for L, one for theta</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(mcmc.output<span class="sc">$</span>chain1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             L     theta
+[1,] 0.9069957 0.3320263
+[2,] 0.9069957 0.3320263
+[3,] 0.8286136 0.2991425
+[4,] 0.9720476 0.3574513
+[5,] 0.9215569 0.3378612
+[6,] 0.9215569 0.3378612</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># dim = 4000*2</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># we have n.iter - n.burnin many samples for posterior inference</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(mcmc.output<span class="sc">$</span>chain1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4000    2</code></pre>
+</div>
+</div>
+<ul>
+<li>Basic posterior inference like computing posterior mean and computing <span class="math inline">\(95 \%\)</span> credible intervals.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior mean for survival rate theta</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># approx 0.34</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(mcmc.output<span class="sc">$</span>chain1[,<span class="st">'theta'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.335845</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 95% credible interval for theta</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co"># theta \in (0.226, 0.466)</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(mcmc.output<span class="sc">$</span>chain1[,<span class="st">'theta'</span>], <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">2.5</span>, <span class="fl">97.5</span>)<span class="sc">/</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     2.5%     97.5% 
+0.2137652 0.4676791 </code></pre>
+</div>
+</div>
+<ul>
+<li>We will now visualize samples from the posterior distribution.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># histogram of samples from the posterior distr of theta</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>mcmc.output<span class="sc">$</span>chain1[,<span class="st">"theta"</span>] <span class="sc">%&gt;%</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">x =</span> value), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"survival probability"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ecology_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p>Some R packages that are useful in performing posterior inference are <code>MCMCvis</code>, <code>ggmcmc</code>, <code>bayesplot</code>, and <code>basicMCMCplots</code>. The resource I followed focuses on <code>MCMCvis</code> package.</p></li>
+<li><p>Use <code>MCMCsummary()</code> to get the most common MCMC related numerical summaries.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># round it off upto two digits</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">MCMCsummary</span>(<span class="at">object =</span> mcmc.output, <span class="at">round =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      mean   sd 2.5%  50% 97.5% Rhat n.eff
+L     0.94 0.17 0.66 0.92  1.32    1  2713
+theta 0.34 0.06 0.22 0.34  0.47    1  2745</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># caterpillar plot to visualise the posterior distributions</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The point represents the posterior median</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the thick line is the 50% credible interval and the thin line the 95% credible interval.</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="fu">MCMCplot</span>(<span class="at">object =</span> mcmc.output, <span class="at">params =</span> <span class="st">'theta'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ecology_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p>We can visualize MCMC samples using a trace plot. In a trace plot, the values of posterior samples are plotted against iteration number.</p></li>
+<li><p>We use the trace and density plots for assessing convergence and get an idea of whether there may be any estimation issues.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MCMCtrace</span>(<span class="at">object =</span> mcmc.output,</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">pdf =</span> <span class="cn">FALSE</span>, <span class="co"># no export to PDF</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">ind =</span> <span class="cn">TRUE</span>, <span class="co"># separate density lines per chain</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">params =</span> <span class="st">"theta"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ecology_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>The extra arguments <code>Rhat</code> and <code>n.eff</code> within the <code>MCMCtrace()</code> function can be used to include some diagnostic summaries in the trace plots.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MCMCtrace</span>(<span class="at">object =</span> mcmc.output,</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">pdf =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">ind =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">Rhat =</span> <span class="cn">TRUE</span>, <span class="co"># add Rhat</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">n.eff =</span> <span class="cn">TRUE</span>, <span class="co"># add eff sample size</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">params =</span> <span class="st">"theta"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ecology_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p>A nice by-product of working with MCMC simulations is that we can obtain the posterior distribution of any quantity that is a function of your model parameters by applying this function to samples from the posterior distribution of these parameters. Eg. Use posterior samples for <span class="math inline">\(\theta\)</span> to estimate <span class="math inline">\(L\)</span>.</p></li>
+<li><p>Especially when working with big models/data, it is recommended to keep any calculations that can be made “post-hoc” using the posterior samples outside of NIMBLE as this lessens memory load.</p>
+<ul>
+<li>In our example, all we need are samples from the posterior distribution of <span class="math inline">\(\theta\)</span>, which we pool between the three chains.</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># concatenate the three MCs</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>theta_samples <span class="ot">&lt;-</span> <span class="fu">c</span>(mcmc.output<span class="sc">$</span>chain1[,<span class="st">'theta'</span>], </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>                   mcmc.output<span class="sc">$</span>chain2[,<span class="st">'theta'</span>],</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>                   mcmc.output<span class="sc">$</span>chain3[,<span class="st">'theta'</span>])</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="co"># samples from the posterior distribution of lifespan </span></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>lifespan <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="fu">log</span>(theta_samples)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior mean</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(lifespan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9361611</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 95% credible interval</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(lifespan, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">2.5</span>, <span class="fl">97.5</span>)<span class="sc">/</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     2.5%     97.5% 
+0.6633347 1.3169296 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># visualize posterior distr of lifespan</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>lifespan <span class="sc">%&gt;%</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">x =</span> value), <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"lifespan"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ecology_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>To summarize, following is the NIMBLE workflow</li>
+</ul>
+<pre><code># model building
+model &lt;- nimbleCode({
+  # likelihood
+  survived ~ dbinom(theta, released)
+  # prior
+  theta ~ dunif(0, 1)
+  # derived quantity
+  lifespan &lt;- -1/log(theta)
+})
+
+
+# read in data
+my.data &lt;- list(released = 57, survived = 19)
+
+
+# specify parameters to monitor
+parameters.to.save &lt;- c("theta", "lifespan")
+
+
+# pick initial values
+initial.values &lt;- function() list(theta = runif(1,0,1))
+
+
+# specify MCMC details
+n.iter &lt;- 5000
+n.burnin &lt;- 1000
+n.chains &lt;- 3
+
+
+# run NIMBLE
+mcmc.output &lt;- nimbleMCMC(code = model,
+                          data = my.data,
+                          inits = initial.values,
+                          monitors = parameters.to.save,
+                          niter = n.iter,
+                          nburnin = n.burnin,
+                          nchains = n.chains)
+
+
+# calculate numerical summaries
+MCMCsummary(object = mcmc.output, round = 2)
+
+
+# visualize parameter posterior distribution
+MCMCplot(object = mcmc.output, 
+         params = 'theta')
+
+
+# check convergence
+MCMCtrace(object = mcmc.output,
+          pdf = FALSE, # no export to PDF
+          ind = TRUE, # separate density lines per chain
+          params = "theta")</code></pre>
+</section>
+</section>
+<section id="part-2-nimble-functions" class="level1">
+<h1>Part 2: NIMBLE Functions</h1>
+<ul>
+<li><p>Provides a programming environment so that we can have full control over building models and estimating parameters.</p></li>
+<li><p>NIMBLE allows us to write our own functions and distributions to build models, and to choose alternative MCMC samplers or code new ones. This flexibility often comes with faster convergence and often faster runtime.</p></li>
+<li><p>In NIMBLE we can write and use our own functions, or use existing R or C/C++ functions. This allows us to customize models the way we want.</p></li>
+<li><p>NIMBLE provides <code>nimbleFunctions</code> for programming. A <code>nimbleFunction</code> is like an R function, plus it can be compiled for faster computation.</p></li>
+<li><p>Here is an example of <code>nimbleFunctions</code> to compute <code>lifespan</code></p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>computeLifespan <span class="ot">&lt;-</span> <span class="fu">nimbleFunction</span>(</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the function to be executed, it is written in NIMBLE language</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">run =</span> <span class="cf">function</span>(<span class="at">theta =</span> <span class="fu">double</span>(<span class="dv">0</span>)) { </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>        ans <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="fu">log</span>(theta)</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span>(ans)</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">returnType</span>(<span class="fu">double</span>(<span class="dv">0</span>))  </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    } </span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li><p>The <code>theta = double(0)</code> and <code>returnType(double(0))</code> arguments tell NIMBLE that the input and output are single numeric values (scalars).</p></li>
+<li><p>Alternatively, <code>double(1)</code> and <code>double(2)</code> are for vectors and matrices, while <code>logical()</code>, <code>integer()</code> and <code>character()</code> are for logical, integer and character values.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">computeLifespan</span>(<span class="fl">0.8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4.48142</code></pre>
+</div>
+</div>
+<ul>
+<li>We can compile it and use the C++ code for faster computations</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compile</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>CcomputeLifespan <span class="ot">&lt;-</span> <span class="fu">compileNimble</span>(computeLifespan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">CcomputeLifespan</span>(<span class="fl">0.8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4.48142</code></pre>
+</div>
+</div>
+<ul>
+<li>Note that we can also use the <code>nimbleFunction</code> in a model. For instance,</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">nimbleCode</span>({</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># likelihood</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  survived <span class="sc">~</span> <span class="fu">dbinom</span>(theta, released)</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prior</span></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>  theta <span class="sc">~</span> <span class="fu">dunif</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># derived quantity defined using nimbleFunction object</span></span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>  lifespan <span class="ot">&lt;-</span> <span class="fu">computeLifespan</span>(theta)</span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>The rest of the workflow remains the same:</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>parameters.to.save <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"theta"</span>, <span class="st">"lifespan"</span>)</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>initial.values <span class="ot">&lt;-</span> <span class="cf">function</span>() <span class="fu">list</span>(<span class="at">theta =</span> <span class="fu">runif</span>(<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">1</span>))</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>n.iter <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>n.burnin <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>n.chains <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>mcmc.output <span class="ot">&lt;-</span> <span class="fu">nimbleMCMC</span>(<span class="at">code =</span> model,</span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>                          <span class="at">data =</span> my.data,</span>
+<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>                          <span class="at">inits =</span> initial.values,</span>
+<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>                          <span class="at">monitors =</span> parameters.to.save,</span>
+<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>                          <span class="at">niter =</span> n.iter,</span>
+<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>                          <span class="at">nburnin =</span> n.burnin,</span>
+<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>                          <span class="at">nchains =</span> n.chains)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] 'R' is provided in 'data' but is not a variable in the model and is being ignored.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] 'S' is provided in 'data' but is not a variable in the model and is being ignored.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>  [Note] This model is not fully initialized. This is not an error.
+         To see which variables are not initialized, use model$initializeInfo().
+         For more information on model initialization, see help(modelInitialization).</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model calculations</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[Note] NAs were detected in model variables: released, survived, logProb_survived.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 1...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>warning: value in right-hand-side-only variable is NA or NaN, in variable: released
+warning: value of stochastic node survived: value is NA or NaN even after trying to simulate.
+warning: problem initializing stochastic node survived: logProb is NA or NaN.
+|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 2...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>warning: value in right-hand-side-only variable is NA or NaN, in variable: released
+warning: value of stochastic node survived: value is NA or NaN even after trying to simulate.
+warning: problem initializing stochastic node survived: logProb is NA or NaN.
+|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>running chain 3...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>warning: value in right-hand-side-only variable is NA or NaN, in variable: released
+warning: value of stochastic node survived: value is NA or NaN even after trying to simulate.
+warning: problem initializing stochastic node survived: logProb is NA or NaN.
+|-------------|-------------|-------------|-------------|
+|-------------------------------------------------------|</code></pre>
+</div>
+</div>
+<ul>
+<li>See <a href="https://r-nimble.org/html_manual/cha-RCfunctions.html#cha-RCfunctions">Chapter 11</a> of the NIMBLE manual to learn more about <code>nimbleFunctions()</code></li>
+</ul>
+</section>
+<section id="part-3-customizing-mcmc-samplers" class="level1">
+<h1>Part 3: Customizing MCMC samplers</h1>
+<ul>
+<li><p>So far, we worked with <code>nimbleMCMC()</code>, which runs the default MCMC workflow. Sometimes we will want to customize the MCMC samplers to improve or speed up convergence.</p></li>
+<li><p>NIMBLE allows you to look under the hood by using a detailed workflow in several steps: <code>nimbleModel()</code>, <code>configureMCMC()</code>, <code>buildMCMC()</code>, <code>compileNimble()</code> and <code>runMCMC()</code>. Note that <code>nimbleMCMC()</code> does all of this at once.</p>
+<ul>
+<li><code>nimbleModel()</code>: to create the model as an R object (uncompiled model).</li>
+<li><code>compileNimble()</code>: to compile the model. By a compiled model, we mean that the corresponding C++ code is generated, compiled and loaded back into R so that it can be used in R</li>
+</ul></li>
+<li><p>In the example below, we have two version of of the model, (uncompiled model) <code>survival</code> is in R and (compiled model) <code>Csurvival</code> in C++.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="co"># first, we define the model (as usual)</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">nimbleCode</span>({</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># likelihood</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>  survived <span class="sc">~</span> <span class="fu">dbinom</span>(theta, released)</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prior</span></span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>  theta <span class="sc">~</span> <span class="fu">dunif</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># derived quantity</span></span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>  lifespan <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="fu">log</span>(theta)</span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a><span class="co"># read in data and set initial values</span></span>
+<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a>my.data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">survived =</span> <span class="dv">19</span>, <span class="at">released =</span> <span class="dv">57</span>)</span>
+<span id="cb74-13"><a href="#cb74-13" aria-hidden="true" tabindex="-1"></a>initial.values <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta =</span> <span class="fl">0.5</span>)</span>
+<span id="cb74-14"><a href="#cb74-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-15"><a href="#cb74-15" aria-hidden="true" tabindex="-1"></a><span class="co"># create the model as an R object (uncompiled model) </span></span>
+<span id="cb74-16"><a href="#cb74-16" aria-hidden="true" tabindex="-1"></a>survival <span class="ot">&lt;-</span> <span class="fu">nimbleModel</span>(<span class="at">code =</span> model,</span>
+<span id="cb74-17"><a href="#cb74-17" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> my.data,</span>
+<span id="cb74-18"><a href="#cb74-18" aria-hidden="true" tabindex="-1"></a>                        <span class="at">inits =</span> initial.values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Defining model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Building model</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Setting data and initial values</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Checking model sizes and dimensions</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compile model</span></span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>Csurvival <span class="ot">&lt;-</span> <span class="fu">compileNimble</span>(survival)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.</code></pre>
+</div>
+</div>
+<ul>
+<li>Being able to separate the steps of model building and parameter estimation is a strength of NIMBLE.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

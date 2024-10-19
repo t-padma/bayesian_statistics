@@ -127,10 +127,10 @@ window.Quarto = {
 
 <p>There are two steps involved in defining a <code>rstan</code> model: 1. define Bayesian model structure. 2. simulate the posterior.</p>
 <p>Let us look at Beta-Binomial example.</p>
-<p><span class="math display">\[
+<p><span class="math display">\[\begin{align*}
 Y | \pi \sim Binom(10,\pi) \\
 \pi \sim Beta(2,2)
-\]</span></p>
+\end{align*}\]</span></p>
 <p>By Beta-Binomial conjugacy, we know that the posterior is <span class="math inline">\(\pi | Y=y \sim Beta(2 + y, 2+10-y)\)</span>. The function <code>stan()</code>, loosely speaking, chooses an appropriate MCMC algorithm and runs it to produce apprximate samples from Beta-Binomial posterior.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## step 1: define model structure as character string</span></span>
@@ -153,14 +153,14 @@ Y | \pi \sim Binom(10,\pi) \\
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>bb_sim <span class="ot">&lt;-</span> <span class="fu">stan</span>(<span class="at">model_code =</span> bb_model,  <span class="co"># character string defining model</span></span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> <span class="fu">list</span>(<span class="at">Y =</span> <span class="dv">9</span>),     <span class="co"># list of observed data</span></span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>               <span class="at">chains =</span> <span class="dv">4</span>,             <span class="co"># number of parallel Markov chains to run</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>               <span class="at">iter =</span> <span class="dv">5000</span> <span class="sc">*</span> <span class="dv">2</span>,        <span class="co"># number of iterations or length of each Markov chain   # nolint</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>               <span class="at">iter =</span> <span class="dv">5000</span> <span class="sc">*</span> <span class="dv">2</span>,        <span class="co"># number of iterations or length of each Markov chain   </span></span>
 <span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>               <span class="at">seed =</span> <span class="dv">84735</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 8e-06 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+Chain 1: Gradient evaluation took 4e-06 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.04 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -177,9 +177,9 @@ Chain 1: Iteration: 8000 / 10000 [ 80%]  (Sampling)
 Chain 1: Iteration: 9000 / 10000 [ 90%]  (Sampling)
 Chain 1: Iteration: 10000 / 10000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 0.019 seconds (Warm-up)
-Chain 1:                0.023 seconds (Sampling)
-Chain 1:                0.042 seconds (Total)
+Chain 1:  Elapsed Time: 0.02 seconds (Warm-up)
+Chain 1:                0.024 seconds (Sampling)
+Chain 1:                0.044 seconds (Total)
 Chain 1: 
 
 SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
@@ -202,9 +202,9 @@ Chain 2: Iteration: 8000 / 10000 [ 80%]  (Sampling)
 Chain 2: Iteration: 9000 / 10000 [ 90%]  (Sampling)
 Chain 2: Iteration: 10000 / 10000 [100%]  (Sampling)
 Chain 2: 
-Chain 2:  Elapsed Time: 0.02 seconds (Warm-up)
-Chain 2:                0.019 seconds (Sampling)
-Chain 2:                0.039 seconds (Total)
+Chain 2:  Elapsed Time: 0.021 seconds (Warm-up)
+Chain 2:                0.021 seconds (Sampling)
+Chain 2:                0.042 seconds (Total)
 Chain 2: 
 
 SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
@@ -227,9 +227,9 @@ Chain 3: Iteration: 8000 / 10000 [ 80%]  (Sampling)
 Chain 3: Iteration: 9000 / 10000 [ 90%]  (Sampling)
 Chain 3: Iteration: 10000 / 10000 [100%]  (Sampling)
 Chain 3: 
-Chain 3:  Elapsed Time: 0.019 seconds (Warm-up)
-Chain 3:                0.023 seconds (Sampling)
-Chain 3:                0.042 seconds (Total)
+Chain 3:  Elapsed Time: 0.021 seconds (Warm-up)
+Chain 3:                0.024 seconds (Sampling)
+Chain 3:                0.045 seconds (Total)
 Chain 3: 
 
 SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).
@@ -252,9 +252,9 @@ Chain 4: Iteration: 8000 / 10000 [ 80%]  (Sampling)
 Chain 4: Iteration: 9000 / 10000 [ 90%]  (Sampling)
 Chain 4: Iteration: 10000 / 10000 [100%]  (Sampling)
 Chain 4: 
-Chain 4:  Elapsed Time: 0.02 seconds (Warm-up)
+Chain 4:  Elapsed Time: 0.021 seconds (Warm-up)
 Chain 4:                0.021 seconds (Sampling)
-Chain 4:                0.041 seconds (Total)
+Chain 4:                0.042 seconds (Total)
 Chain 4: </code></pre>
 </div>
 </div>
@@ -345,7 +345,7 @@ iterations   chain:1   chain:2   chain:3   chain:4
 </div>
 </div>
 <ul>
-<li>When we are unable to provide derive a posterior, simulated samples provide a crucial <em>approximation</em>. Simulations aren’t perfect. This motivates us towards <strong>Markov Chain Diagnostics</strong>. MCMC diagnostics deal with the following questions:</li>
+<li>When we are unable to provide or derive a posterior, simulated samples provide a crucial <em>approximation</em>. Simulations aren’t perfect. This motivates us towards <strong>Markov Chain Diagnostics</strong>. MCMC diagnostics deal with the following questions:</li>
 </ul>
 <ol type="1">
 <li>How does a “good” Markov chain look like?</li>
@@ -353,14 +353,28 @@ iterations   chain:1   chain:2   chain:3   chain:4
 <li>How “big” should our MC sample size be?</li>
 </ol>
 <ul>
-<li>Answering the above diagnostics related questions is both an art and science. With experience, one gets a feel for “good” and “bad” Markov chains. Chapter 6 of the textbook looks at some visual and numerical diagnostic tools. These tools need to be used <em>holistically</em>
+<li><p>Answering the above diagnostics related questions is both an art and science. With experience, one gets a feel for “good” and “bad” Markov chains. Chapter 6 of the textbook looks at some visual and numerical diagnostic tools. These tools need to be used <em>holistically</em></p>
 <ul>
 <li>Visual diagnostic tools: <strong>trace plots, parallel chains</strong>.</li>
 <li>numerical diagnostics: <strong>effective sample size, autocorrelation</strong> and <strong>R-hat</strong>.</li>
 </ul></li>
-<li>A “good” trace plot looks like a bunch of white noise with no discernible trends or notable phenomena. This nothingness implies that the <strong>chain is stable</strong>. The traceplots below are taken from Ch6 of the Bayesrules textbook.</li>
+<li><p>A “good” trace plot looks like a bunch of white noise with no discernible trends or notable phenomena. This nothingness implies that the <strong>chain is stable</strong>.</p></li>
+<li><p>The traceplots below are taken from Ch6 of the Bayesrules textbook. They are examples of “bad” chain behaviour.</p></li>
 </ul>
 <p><img src="./images/trace.png" class="img-fluid"></p>
+<blockquote class="blockquote">
+<p>First, consider the trace plots in Figure 6.12 (left). The downward trend in Chain A indicates that it has not yet stabilized after 5,000 iterations – it has not yet “found” or does not yet know how to explore the range of posterior plausible π values. The downward trend also hints at strong correlation among the chain values – they don’t look like independent noise. All of this to say that Chain A is mixing slowly. This is bad. Though Markov chains are inherently dependent, the more they behave like fast mixing (noisy) independent samples, the smaller the error in the resulting posterior approximation (roughly speaking). Chain B exhibits a different problem. As evidenced by the two completely flat lines in the trace plot, it tends to get stuck when it visits smaller values of π.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>The density plots in Figure 6.12 (right) confirm that both of these goofy-looking chains result in a serious issue: they produce poor approximations of the Beta(11,3) posterior (superimposed in black), and thus misleading posterior conclusions. Consider Chain A. Since it’s mixing so slowly, it has only explored π values in the rough range from 0.6 to 0.9 in its first 5,000 iterations. As a result, its posterior approximation overestimates the plausibility of π values in this range while completely underestimating the plausibility of values outside this range. Next, consider Chain B. In getting stuck, Chain B over-samples some values in the left tail of the posterior π values. This phenomenon produces the erroneous spikes in the posterior approximation.</p>
+</blockquote>
+<ul>
+<li>Some steps one can take if they see bad MC diagnostic plots:
+<ul>
+<li>Check the model. Are the assumed prior and data models appropriate?</li>
+<li>Run the chain for more iterations. Some undesirable short-term chain trends might iron out in the long term.</li>
+</ul></li>
+</ul>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
 <ol type="1">
